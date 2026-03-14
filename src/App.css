@@ -405,3 +405,95 @@ body {
     transform: translateY(0);
   }
 }
+
+/* === SAVAT SAHIFASI DIZAYNI === */
+.cart-page {
+  animation: fadeIn 0.3s ease;
+  padding-bottom: 80px; /* Pastda tugmaga joy qoldirish */
+}
+
+.cart-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #212529;
+  text-align: left;
+}
+
+.cart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border: 1px solid #e9ecef;
+}
+
+.cart-item-img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  margin-right: 16px;
+}
+
+.cart-item-info {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.cart-item-brand {
+  font-size: 12px;
+  color: #868e96;
+  font-weight: 600;
+}
+
+.cart-item-name {
+  font-size: 14px;
+  color: #212529;
+  font-weight: 500;
+  margin: 4px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cart-item-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s;
+}
+
+.remove-btn:hover {
+  color: #dc3545; /* O'chirish qizil rangda */
+}
+
+.cart-total-box {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #212529;
+  padding-top: 16px;
+  border-top: 2px dashed #dee2e6;
+}
