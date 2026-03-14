@@ -648,3 +648,51 @@ body {
     display: none !important;
   }
 }
+
+/* --- RAZMER (SIZE) TANLASH DIZAYNI --- */
+.modal-sizes {
+  margin-bottom: 20px;
+}
+
+.sizes-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #212529;
+}
+
+.sizes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.size-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.size-btn:hover {
+  background-color: #e9ecef;
+}
+
+.size-btn.selected {
+  background-color: #212529; /* Qora fon */
+  color: #ffffff;
+  border-color: #212529;
+}
+
+/* Savat ro'yxatida razmerni chiroyli ko'rsatish */
+.cart-item-size {
+  font-size: 13px;
+  color: #868e96;
+  margin: 2px 0 6px 0;
+  font-weight: 600;
+}

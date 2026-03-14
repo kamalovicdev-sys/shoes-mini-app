@@ -3,12 +3,13 @@ import './App.css'
 
 const WebApp = window.Telegram.WebApp;
 
+// 1. Bazaga "sizes" (razmerlar) qo'shildi
 const SHOES = [
-  { id: 1, brand: "New Balance", name: "MR530 UNISEX - Trainers - sea salt", price: "€129.95", isSponsored: true, image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500&q=80", description: "Kundalik kiyish uchun juda qulay va zamonaviy uslubdagi krossovka." },
-  { id: 2, brand: "Nike Sportswear", name: "AIR FORCE 1 - Trainers - white", price: "€89.95", oldPrice: "€99.95", discount: "-10%", isDeal: true, image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80", description: "Klassik oq rangdagi afsonaviy Air Force 1. Har qanday kiyim bilan ajoyib mos tushadi." },
-  { id: 3, brand: "Nike Sportswear", name: "AIR FORCE 1 '07 - Trainers - white", price: "€95.95", oldPrice: "€119.95", discount: "-20%", isDeal: true, image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80", description: "Premium charm va havo yostig'iga ega original Air Force 1 '07 modeli." },
-  { id: 4, brand: "Puma", name: "RS-X - Trainers - dark blue", price: "€75.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Sport va faol hayot tarzi uchun mo'ljallangan yengil va mustahkam Puma krossovkasi." },
-  { id: 5, brand: "Puma", name: "Suede Classic - Trainers - black", price: "€65.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Klassik Puma Suede." }
+  { id: 1, brand: "New Balance", name: "MR530 UNISEX - Trainers - sea salt", price: "€129.95", isSponsored: true, image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500&q=80", description: "Kundalik kiyish uchun juda qulay va zamonaviy uslubdagi krossovka.", sizes: [39, 40, 41, 42, 43] },
+  { id: 2, brand: "Nike Sportswear", name: "AIR FORCE 1 - Trainers - white", price: "€89.95", oldPrice: "€99.95", discount: "-10%", isDeal: true, image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80", description: "Klassik oq rangdagi afsonaviy Air Force 1. Har qanday kiyim bilan ajoyib mos tushadi.", sizes: [40, 41, 42, 44] },
+  { id: 3, brand: "Nike Sportswear", name: "AIR FORCE 1 '07 - Trainers - white", price: "€95.95", oldPrice: "€119.95", discount: "-20%", isDeal: true, image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80", description: "Premium charm va havo yostig'iga ega original Air Force 1 '07 modeli.", sizes: [39, 41, 42] },
+  { id: 4, brand: "Puma", name: "RS-X - Trainers - dark blue", price: "€75.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Sport va faol hayot tarzi uchun mo'ljallangan yengil va mustahkam Puma krossovkasi.", sizes: [40, 42, 43] },
+  { id: 5, brand: "Puma", name: "Suede Classic - Trainers - black", price: "€65.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Klassik Puma Suede.", sizes: [38, 39, 40, 41] }
 ];
 
 const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
@@ -19,6 +20,9 @@ function App() {
   const [cart, setCart] = useState([]);
   const [detailsModal, setDetailsModal] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Yangi qo'shilgan State: Tanlangan razmerni saqlash
+  const [selectedSize, setSelectedSize] = useState(null);
 
   const [activeFilter, setActiveFilter] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState("All");
@@ -31,6 +35,13 @@ function App() {
       WebApp.setHeaderColor('bg_color');
     }
   }, []);
+
+  // Modal oyna ochilganda avvalgi tanlangan razmerni tozalash
+  useEffect(() => {
+    if (detailsModal) {
+      setSelectedSize(null);
+    }
+  }, [detailsModal]);
 
   const calculateTotal = () => {
     const total = cart.reduce((sum, item) => {
@@ -58,7 +69,6 @@ function App() {
   useEffect(() => {
     const handleMainButtonClick = () => {
       if (isCartOpen) {
-        // Agar Telegramda bo'lsa ma'lumot jo'natadi, brauzerda bo'lsa alert chiqaradi
         if (WebApp.initDataUnsafe?.user) {
           WebApp.sendData(JSON.stringify({ type: 'order', items: cart, total: calculateTotal() }));
         } else {
@@ -79,11 +89,17 @@ function App() {
     };
   }, [isCartOpen, cart]);
 
-  const addToCart = (shoe, event) => {
+  // Savatga qo'shish funksiyasi endi razmerni ham qabul qiladi
+  const addToCart = (shoe, size, event) => {
     if (event) event.stopPropagation();
-    // Bitta mahsulotni faqat bir marta qo'shish imkoni
-    if (!cart.some(item => item.id === shoe.id)) {
-      setCart([...cart, shoe]);
+
+    // Agar Grid'dan to'g'ridan-to'g'ri qo'shilsa (size=null), birinchi razmerni oladi
+    const sizeToAdd = size || shoe.sizes[0];
+
+    // Aynan shu poyabzalning shu razmeri savatda borligini tekshiramiz
+    if (!cart.some(item => item.id === shoe.id && item.selectedSize === sizeToAdd)) {
+      // Yangi id beramiz (o'chirishda muammo bo'lmasligi uchun) va razmerni qo'shamiz
+      setCart([...cart, { ...shoe, selectedSize: sizeToAdd, cartItemId: Date.now() }]);
       if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('light');
     }
   };
@@ -145,7 +161,7 @@ function App() {
           <div className="shoes-grid">
             {displayedShoes.length > 0 ? (
               displayedShoes.map((shoe) => {
-                const isInCart = cart.some(item => item.id === shoe.id); // Savatdaligini tekshirish
+                const isInCart = cart.some(item => item.id === shoe.id);
                 return (
                   <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
                     <div className="image-container" onClick={() => setDetailsModal(shoe)}>
@@ -162,8 +178,8 @@ function App() {
                     <div className="card-actions">
                       <button
                         className="add-to-cart-btn"
-                        onClick={(e) => addToCart(shoe, e)}
-                        disabled={isInCart} // Savatda bo'lsa tugmani o'chirish
+                        onClick={(e) => addToCart(shoe, null, e)}
+                        disabled={isInCart}
                       >
                         {isInCart ? '✓ Added' : 'Add to Cart'}
                       </button>
@@ -176,7 +192,6 @@ function App() {
             )}
           </div>
 
-          {/* Mahalliy brauzerda ko'rish uchun yordamchi Savat tugmasi */}
           {cart.length > 0 && (
             <button className="floating-cart-btn" onClick={() => setIsCartOpen(true)}>
               🛒 View Cart ({cart.length})
@@ -195,11 +210,12 @@ function App() {
 
           <div className="cart-list">
             {cart.map((item, index) => (
-              <div key={index} className="cart-item">
+              <div key={item.cartItemId || index} className="cart-item">
                 <img src={item.image} alt={item.name} className="cart-item-img" />
                 <div className="cart-item-info">
                   <p className="cart-item-brand">{item.brand}</p>
                   <p className="cart-item-name">{item.name}</p>
+                  <p className="cart-item-size">Size: {item.selectedSize}</p>
                   <p className="cart-item-price">{item.price}</p>
                 </div>
                 <button className="remove-btn" onClick={() => removeFromCart(index)}>
@@ -216,7 +232,6 @@ function App() {
             <span>€{calculateTotal()}</span>
           </div>
 
-          {/* Mahalliy brauzer uchun xaridni tasdiqlash tugmasi */}
           <button className="floating-cart-btn confirm-btn" onClick={() => {
             alert(`Buyurtma qabul qilindi!\nJami: €${calculateTotal()}`);
             setCart([]);
@@ -227,7 +242,7 @@ function App() {
         </div>
       )}
 
-      {/* 3. MODAL OYNA (Details) */}
+      {/* 3. MODAL OYNA (Details va Razmerlar) */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -241,13 +256,42 @@ function App() {
                 {detailsModal.isDeal && <span className="modal-discount">{detailsModal.discount} OFF</span>}
               </div>
               <div className="modal-divider"></div>
+
+              {/* === RAZMER TANLASH QISMI === */}
+              <div className="modal-sizes">
+                <p className="sizes-title">O'lchamni tanlang:</p>
+                <div className="sizes-list">
+                  {detailsModal.sizes.map(size => (
+                    <button
+                      key={size}
+                      className={`size-btn ${selectedSize === size ? 'selected' : ''}`}
+                      onClick={() => setSelectedSize(size)}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <p className="modal-description">{detailsModal.description}</p>
+
+              {/* Razmerga qarab Savatga qo'shish tugmasi mantiqi */}
               <button
                 className="add-to-cart-btn large"
-                onClick={() => { addToCart(detailsModal, null); setDetailsModal(null); }}
-                disabled={cart.some(item => item.id === detailsModal.id)}
+                onClick={() => {
+                  if (selectedSize) {
+                    addToCart(detailsModal, selectedSize, null);
+                    setDetailsModal(null);
+                  }
+                }}
+                disabled={!selectedSize || cart.some(item => item.id === detailsModal.id && item.selectedSize === selectedSize)}
               >
-                {cart.some(item => item.id === detailsModal.id) ? '✓ Added to Cart' : 'Add to Cart'}
+                {!selectedSize
+                  ? "O'lchamni tanlang"
+                  : cart.some(item => item.id === detailsModal.id && item.selectedSize === selectedSize)
+                    ? "✓ Savatda bor"
+                    : "Savatga qo'shish"
+                }
               </button>
             </div>
           </div>
