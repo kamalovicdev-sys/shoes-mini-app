@@ -268,3 +268,140 @@ body {
 .shoe-card.in-cart .add-to-cart-btn:hover {
     background-color: #28a745;
 }
+
+/* === MODAL OYNA DIZAYNI === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6); /* Yarim shaffof qora fon */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* Telefonda pastdan chiqishi uchun */
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 500px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+  padding-bottom: 20px; /* Pastdan bo'sh joy */
+}
+
+/* Kompyuter/Planshet uchun modal markazda bo'ladi */
+@media (min-width: 600px) {
+  .modal-overlay {
+    align-items: center;
+  }
+  .modal-content {
+    border-radius: 20px;
+    width: 90%;
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: #f1f3f5;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: #495057;
+  z-index: 10;
+}
+
+.modal-img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  background-color: #f8f9fa;
+}
+
+.modal-body {
+  padding: 20px;
+  text-align: left;
+}
+
+.modal-brand {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #212529;
+}
+
+.modal-name {
+  font-size: 16px;
+  color: #495057;
+  margin-bottom: 16px;
+}
+
+.modal-price-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.modal-discount {
+  background-color: #dc3545;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal-divider {
+  height: 1px;
+  background-color: #e9ecef;
+  margin: 16px 0;
+}
+
+.modal-description {
+  font-size: 14px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.add-to-cart-btn.large {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+/* Modal animatsiyalari */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
