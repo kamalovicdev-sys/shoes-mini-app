@@ -9,9 +9,8 @@ const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 function App() {
-  // === 1. BAZADAGI MAHSULOTLAR UCHUN STATE ===
   const [SHOES, setSHOES] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // Yuklanish jarayoni
+  const [isLoading, setIsLoading] = useState(true);
 
   const [cart, setCart] = useState([]);
   const [detailsModal, setDetailsModal] = useState(null);
@@ -22,12 +21,10 @@ function App() {
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [sortOrder, setSortOrder] = useState("Default");
 
-  // === 2. BAZADAN MA'LUMOTLARNI TORTIB KELISH (FETCH) ===
   useEffect(() => {
     fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
-        // Endi backenddan kelayotgan rasm tayyor ImgBB linki, o'zgartirish shart emas!
         setSHOES(data);
         setIsLoading(false);
       })
@@ -37,12 +34,10 @@ function App() {
       });
   }, []);
 
-  // Bazadagi bor brendlarni avtomatik yig'ib olish
   const BRANDS = useMemo(() => {
     return ["All", ...new Set(SHOES.map(shoe => shoe.brand))];
   }, [SHOES]);
 
-  // Telegram sozlamalari
   useEffect(() => {
     if (WebApp) {
       WebApp.ready();
@@ -143,7 +138,6 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && (
         <>
           <div className="filters-scroll">
@@ -211,7 +205,6 @@ function App() {
         </>
       )}
 
-      {/* 2. SAVAT SAHIFASI */}
       {isCartOpen && (
         <div className="cart-page">
           <div className="cart-header-row">
@@ -253,7 +246,6 @@ function App() {
         </div>
       )}
 
-      {/* 3. MODAL OYNA */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -307,7 +299,6 @@ function App() {
         </div>
       )}
 
-      {/* 4. FILTR PASTKI OYNASI */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
