@@ -106,7 +106,6 @@ async def add_product(
     return {"status": "success", "message": "Mahsulot bazaga muvaffaqiyatli qo'shildi!"}
 
 
-# === 2. BARCHA MAHSULOTLARNI OLISH (GET) API ===
 @app.get("/api/products")
 async def get_products():
     conn = sqlite3.connect("shop.db")
@@ -115,9 +114,11 @@ async def get_products():
     rows = cursor.fetchall()
     conn.close()
 
-    # Bazadan olingan ma'lumotlarni JSON (React tushunadigan) formatga o'tkazamiz
     products = []
     for row in rows:
+        # Agar sizes bo'sh bo'lsa xato bermasligi uchun tekshiramiz
+        sizes_str = row[6] if row[6] else ""
+
         products.append({
             "id": row[0],
             "brand": row[1],
@@ -125,8 +126,8 @@ async def get_products():
             "price": row[3],
             "image": row[4],
             "description": row[5],
-            # Matn ko'rinishidagi "39, 40" ni yana ro'yxatga [39, 40] aylantiramiz
-            "sizes": [int(s.trim()) for s in row[6].split(",") if s.strip().isdigit()],
+            # XATOLIK SHU YERDA EDI: trim() o'rniga strip() yozildi
+            "sizes": [int(s.strip()) for s in sizes_str.split(",") if s.strip().isdigit()],
             "isDeal": bool(row[7]),
             "oldPrice": row[8],
             "discount": row[9]
