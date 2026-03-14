@@ -586,3 +586,65 @@ body {
   color: #1864ab;
   font-weight: 700;
 }
+
+/* --- SAVATDA BOR LIGINI BILDIRUVCHI DIZAYN --- */
+.shoe-card.in-cart {
+  border: 2px solid #28a745;
+}
+
+.shoe-card.in-cart .add-to-cart-btn {
+  background-color: #28a745;
+  cursor: default;
+}
+
+/* --- KOMPYUTERDA TEST QILISH UCHUN SUZIB YURUVCHI TUGMALAR --- */
+.floating-cart-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #212529;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.floating-cart-btn.confirm-btn {
+  background-color: #007bff;
+  width: 90%;
+  max-width: 400px;
+  justify-content: center;
+}
+
+.cart-header-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.back-btn-local {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #007bff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Telegram ichida ochilganda bu suzuvchi tugmalar yashiringan bo'lishi kerak,
+   chunki Telegramning o'zini Main Button'i chiqadi */
+@media (display-mode: standalone) {
+  .floating-cart-btn, .back-btn-local {
+    display: none !important;
+  }
+}

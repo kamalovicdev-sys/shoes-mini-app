@@ -58,7 +58,12 @@ function App() {
   useEffect(() => {
     const handleMainButtonClick = () => {
       if (isCartOpen) {
-        WebApp.sendData(JSON.stringify({ type: 'order', items: cart, total: calculateTotal() }));
+        // Agar Telegramda bo'lsa ma'lumot jo'natadi, brauzerda bo'lsa alert chiqaradi
+        if (WebApp.initDataUnsafe?.user) {
+          WebApp.sendData(JSON.stringify({ type: 'order', items: cart, total: calculateTotal() }));
+        } else {
+          alert(`Buyurtma qabul qilindi!\nJami: €${calculateTotal()}`);
+        }
       } else if (cart.length > 0) {
         setIsCartOpen(true);
       }
@@ -76,13 +81,16 @@ function App() {
 
   const addToCart = (shoe, event) => {
     if (event) event.stopPropagation();
-    setCart([...cart, shoe]);
-    WebApp.HapticFeedback.impactOccurred('light');
+    // Bitta mahsulotni faqat bir marta qo'shish imkoni
+    if (!cart.some(item => item.id === shoe.id)) {
+      setCart([...cart, shoe]);
+      if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('light');
+    }
   };
 
   const removeFromCart = (indexToRemove) => {
     setCart(cart.filter((_, index) => index !== indexToRemove));
-    WebApp.HapticFeedback.impactOccurred('medium');
+    if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('medium');
     if (cart.length === 1) setIsCartOpen(false);
   };
 
@@ -103,7 +111,8 @@ function App() {
     if (filterName === "Brand" || filterName === "Sort by") {
       setActiveFilter(filterName);
     } else {
-      WebApp.showAlert("Bu filtr tez orada qo'shiladi!");
+      if(WebApp.showAlert) WebApp.showAlert("Bu filtr tez orada qo'shiladi!");
+      else alert("Bu filtr tez orada qo'shiladi!");
     }
   };
 
@@ -135,36 +144,55 @@ function App() {
 
           <div className="shoes-grid">
             {displayedShoes.length > 0 ? (
-              displayedShoes.map((shoe) => (
-                <div key={shoe.id} className="shoe-card">
-                  {/* Shu yerda bosilganda Modal ochiladi */}
-                  <div className="image-container" onClick={() => setDetailsModal(shoe)}>
-                    <img src={shoe.image} alt={shoe.name} />
-                    {shoe.isDeal && <div className="deal-badge">Deal</div>}
-                  </div>
-                  <div className="card-info" onClick={() => setDetailsModal(shoe)}>
-                    <div className="brand">{shoe.brand}</div>
-                    <div className="name">{shoe.name}</div>
-                    <div className="price-section">
-                      <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
+              displayedShoes.map((shoe) => {
+                const isInCart = cart.some(item => item.id === shoe.id); // Savatdaligini tekshirish
+                return (
+                  <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
+                    <div className="image-container" onClick={() => setDetailsModal(shoe)}>
+                      <img src={shoe.image} alt={shoe.name} />
+                      {shoe.isDeal && <div className="deal-badge">Deal</div>}
+                    </div>
+                    <div className="card-info" onClick={() => setDetailsModal(shoe)}>
+                      <div className="brand">{shoe.brand}</div>
+                      <div className="name">{shoe.name}</div>
+                      <div className="price-section">
+                        <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
+                      </div>
+                    </div>
+                    <div className="card-actions">
+                      <button
+                        className="add-to-cart-btn"
+                        onClick={(e) => addToCart(shoe, e)}
+                        disabled={isInCart} // Savatda bo'lsa tugmani o'chirish
+                      >
+                        {isInCart ? '✓ Added' : 'Add to Cart'}
+                      </button>
                     </div>
                   </div>
-                  <div className="card-actions">
-                    <button className="add-to-cart-btn" onClick={(e) => addToCart(shoe, e)}>Add to Cart</button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="empty-state">Bu brendda hozircha mahsulot yo'q</div>
             )}
           </div>
+
+          {/* Mahalliy brauzerda ko'rish uchun yordamchi Savat tugmasi */}
+          {cart.length > 0 && (
+            <button className="floating-cart-btn" onClick={() => setIsCartOpen(true)}>
+              🛒 View Cart ({cart.length})
+            </button>
+          )}
         </>
       )}
 
       {/* 2. SAVAT SAHIFASI */}
       {isCartOpen && (
         <div className="cart-page">
-          <h2 className="cart-title">Your Cart</h2>
+          <div className="cart-header-row">
+             <button className="back-btn-local" onClick={() => setIsCartOpen(false)}>← Orqaga</button>
+             <h2 className="cart-title">Your Cart</h2>
+          </div>
+
           <div className="cart-list">
             {cart.map((item, index) => (
               <div key={index} className="cart-item">
@@ -187,6 +215,15 @@ function App() {
             <span>Total:</span>
             <span>€{calculateTotal()}</span>
           </div>
+
+          {/* Mahalliy brauzer uchun xaridni tasdiqlash tugmasi */}
+          <button className="floating-cart-btn confirm-btn" onClick={() => {
+            alert(`Buyurtma qabul qilindi!\nJami: €${calculateTotal()}`);
+            setCart([]);
+            setIsCartOpen(false);
+          }}>
+            CONFIRM ORDER - €{calculateTotal()}
+          </button>
         </div>
       )}
 
@@ -194,12 +231,7 @@ function App() {
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setDetailsModal(null)}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+            <button className="close-btn" onClick={() => setDetailsModal(null)}>✕</button>
             <img src={detailsModal.image} alt={detailsModal.name} className="modal-img" />
             <div className="modal-body">
               <h2 className="modal-brand">{detailsModal.brand}</h2>
@@ -210,8 +242,12 @@ function App() {
               </div>
               <div className="modal-divider"></div>
               <p className="modal-description">{detailsModal.description}</p>
-              <button className="add-to-cart-btn large" onClick={() => { addToCart(detailsModal, null); setDetailsModal(null); }}>
-                Add to Cart
+              <button
+                className="add-to-cart-btn large"
+                onClick={() => { addToCart(detailsModal, null); setDetailsModal(null); }}
+                disabled={cart.some(item => item.id === detailsModal.id)}
+              >
+                {cart.some(item => item.id === detailsModal.id) ? '✓ Added to Cart' : 'Add to Cart'}
               </button>
             </div>
           </div>
