@@ -5,8 +5,8 @@
 }
 
 body {
-  background-color: #ffffff;
-  color: #1a1a1a;
+  background-color: #f8f9fa; /* Yanada yumshoq fon */
+  color: #343a40;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -17,13 +17,11 @@ body {
   margin: 0 auto;
 }
 
-/* Filtrlar dizayni */
 .filters-scroll {
   width: 100%;
   overflow-x: auto;
   padding-bottom: 12px;
-  margin-bottom: 16px;
-  /* Scrollbarni yashirish */
+  margin-bottom: 20px;
   scrollbar-width: none;
 }
 .filters-scroll::-webkit-scrollbar {
@@ -32,154 +30,174 @@ body {
 
 .filters-container {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   width: max-content;
 }
 
 .filter-btn {
   background: transparent;
-  border: 1px solid #d1d1d1;
-  border-radius: 0;
-  padding: 8px 14px;
+  border: 1px solid #ced4da;
+  border-radius: 8px; /* Burchaklarni yumshatish */
+  padding: 10px 16px;
   font-size: 14px;
-  font-weight: 400;
-  color: #1a1a1a;
+  font-weight: 500;
+  color: #495057;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   background-color: #fff;
+  transition: border-color 0.2s, background-color 0.2s;
 }
 
 .filter-btn:hover {
-  border-color: #1a1a1a;
+  border-color: #adb5bd;
+  background-color: #f1f3f5;
 }
 
-/* Grid tuzilishi - mobil uchun 2 ta, kompyuter uchun 3/4 ta */
 .shoes-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px 12px;
+  gap: 20px; /* Kattaroq oraliq */
 }
 
 @media (min-width: 768px) {
   .shoes-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
   }
 }
 
-/* Mahsulot kartochkasi */
+@media (min-width: 992px) {
+  .shoes-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .shoe-card {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Kartochkalar doim bir xil balandlikda bo'ladi */
+  height: 100%;
   text-align: left;
   cursor: pointer;
+  background-color: #fff;
+  border-radius: 12px; /* Yumshoq burchaklar */
+  border: 1px solid #e9ecef;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Nozik soya */
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  overflow: hidden; /* Ichidagi elementlar burchakdan chiqmasligi uchun */
 }
 
-/* Rasm qismi */
+.shoe-card:hover {
+    border-color: #adb5bd;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
 .image-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4; /* Rasmlarning qat'iy o'lchami */
-  background-color: #f5f5f5;
-  margin-bottom: 12px;
-  flex-shrink: 0; /* Rasm qisilib qolmasligi uchun */
+  aspect-ratio: 1 / 1; /* Kvadrat rasmlar */
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
 }
 
 .image-container img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  mix-blend-mode: multiply;
+  object-fit: contain; /* Rasmlarni to'liq ko'rsatish */
+  padding: 10px;
 }
 
-/* Yurakcha tugmasi */
 .heart-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: #ffffff;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  color: #1a1a1a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: #495057;
+  transition: background-color 0.2s;
 }
 
-/* Qizil Deal belgisi */
+.heart-btn:hover {
+    background-color: #fff;
+    color: #dc3545; /* Yurakcha qizil bo'ladi */
+}
+
 .deal-badge {
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: #d3000f;
+  background-color: #dc3545; /* Qizil */
   color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 6px;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-top-right-radius: 8px;
 }
 
-/* Matnlar qismi (YANGI MANTIQ) */
 .card-info {
   display: flex;
   flex-direction: column;
-  flex-grow: 1; /* Bo'sh joyni to'ldiradi */
-  justify-content: space-between; /* Narxni doim eng pastga itaradi */
+  flex-grow: 1;
+  justify-content: space-between;
+  padding: 15px; /* Kattaroq padding */
 }
 
 .text-group {
-  margin-bottom: 8px; /* Narx bilan oraliq masofa */
+  margin-bottom: 10px;
 }
 
 .sponsored {
-  font-size: 10px;
-  color: #666666;
-  margin-bottom: 4px;
+  font-size: 11px;
+  color: #868e96;
+  margin-bottom: 5px;
 }
 
 .brand {
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 2px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 3px;
+  color: #212529;
 }
 
 .name {
-  font-size: 13px;
-  color: #1a1a1a;
-  line-height: 1.3;
-  /* Matnni qat'iy 2 qatorda ushlab turish */
+  font-size: 14px;
+  color: #495057;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Narxlar qismi */
 .price-group {
   display: flex;
   flex-direction: column;
 }
 
 .price {
-  font-size: 14px;
+  font-size: 16px; /* Kattaroq narx */
   font-weight: 700;
+  color: #212529;
 }
 
 .deal-price {
-  color: #d3000f;
-  margin-bottom: 2px;
+  color: #dc3545;
+  margin-bottom: 3px;
 }
 
 .old-price-row {
-  font-size: 11px;
-  color: #666666;
+  font-size: 12px;
+  color: #868e96;
 }
 
 .old-price {
@@ -187,23 +205,66 @@ body {
 }
 
 .discount-badge {
-  color: #d3000f;
-  margin-left: 4px;
+  color: #dc3545;
+  margin-left: 5px;
+  font-weight: 600;
+}
+
+/* Tugmalar qismi (YANGI) */
+.card-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.add-to-cart-btn, .details-btn {
+  flex: 1; /* Tugmalar bir xil kenglikda */
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.add-to-cart-btn {
+  background-color: var(--tg-theme-button-color, #007bff);
+  color: var(--tg-theme-button-text-color, #fff);
+  border: none;
+}
+
+.add-to-cart-btn:hover {
+    background-color: var(--tg-theme-button-color-hover, #0069d9);
+}
+
+.details-btn {
+  background-color: #fff;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.details-btn:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
 }
 
 /* Tanlangan mahsulot dizayni */
-.shoe-card {
-  border: 2px solid transparent; /* Oddiy holatda chegara ko'rinmaydi */
-  transition: border-color 0.2s ease;
-}
-
 .shoe-card.selected {
-  border: 2px solid #1a1a1a; /* Tanlanganda qora chegara paydo bo'ladi */
-  border-radius: 4px; /* O'zimiz xohlagan burchakni berishimiz mumkin */
+  border: 2px solid var(--tg-theme-button-color, #007bff);
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
 }
 
-/* Tanlangan holatda rasmning ham burchaklarini moslashtiramiz */
-.shoe-card.selected .image-container {
-  border-top-left-radius: 2px;
-  border-top-right-radius: 2px;
+/* Savatdagi mahsulot dizayni */
+.shoe-card.in-cart {
+    border: 2px solid #28a745; /* Yashil */
+}
+
+.shoe-card.in-cart .add-to-cart-btn {
+    background-color: #28a745;
+    cursor: default;
+}
+.shoe-card.in-cart .add-to-cart-btn:hover {
+    background-color: #28a745;
 }

@@ -3,7 +3,6 @@ import './App.css'
 
 const WebApp = window.Telegram.WebApp;
 
-// Ma'lumotlar bazasi (oldingi holicha qoladi)
 const SHOES = [
   { id: 1, brand: "New Balance", name: "MR530 UNISEX - Trainers - sea salt", price: "€129.95", isSponsored: true, image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500&q=80" },
   { id: 2, brand: "Nike Sportswear", name: "AIR FORCE 1 - Trainers - white", price: "€89.95", oldPrice: "€99.95", discount: "-10%", isDeal: true, image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80" },
@@ -14,8 +13,8 @@ const SHOES = [
 const FILTERS = ["Sort by", "Brand", "Size", "Colour", "Qualities", "Price", "Material"];
 
 function App() {
-  // Tanlangan mahsulotni saqlash uchun state
   const [selectedShoe, setSelectedShoe] = useState(null);
+  const [cart, setCart] = useState([]); // Savat uchun state
 
   useEffect(() => {
     if (WebApp) {
@@ -24,40 +23,52 @@ function App() {
     }
   }, []);
 
-  // 1. Tanlangan mahsulotga qarab Telegram Asosiy tugmasini boshqarish
   useEffect(() => {
     if (selectedShoe) {
-      WebApp.MainButton.setText(`SOTIB OLISH - ${selectedShoe.price}`);
+      WebApp.MainButton.setText(`BUY NOW - ${selectedShoe.price}`);
       WebApp.MainButton.show();
+    } else if (cart.length > 0) {
+        WebApp.MainButton.setText(`VIEW CART (${cart.length})`);
+        WebApp.MainButton.show();
     } else {
       WebApp.MainButton.hide();
     }
-  }, [selectedShoe]);
+  }, [selectedShoe, cart]);
 
-  // 2. Asosiy tugma bosilganda botga ma'lumot jo'natish
   useEffect(() => {
-    const handleBuyClick = () => {
-      // Tanlangan mahsulot ma'lumotlarini matn (JSON) ko'rinishida botga yuboramiz
-      WebApp.sendData(JSON.stringify(selectedShoe));
+    const handleMainButtonClick = () => {
+        if (selectedShoe) {
+            WebApp.sendData(JSON.stringify({type: 'buy', ...selectedShoe}));
+        } else if (cart.length > 0) {
+            // Savatni ko'rish mantiqi
+            alert("Viewing cart: " + JSON.stringify(cart));
+        }
     };
 
-    // Tugmaga bosish hodisasini qo'shamiz
-    WebApp.MainButton.onClick(handleBuyClick);
+    WebApp.MainButton.onClick(handleMainButtonClick);
 
-    // Komponent yangilanganda xatolik bo'lmasligi uchun eskisini tozalaymiz
     return () => {
-      WebApp.MainButton.offClick(handleBuyClick);
+      WebApp.MainButton.offClick(handleMainButtonClick);
     };
-  }, [selectedShoe]);
+  }, [selectedShoe, cart]);
 
-  // Kartochka bosilganda ishlaydigan funksiya
   const handleCardClick = (shoe) => {
-    // Agar tanlangan mahsulot yana bosilsa, tanlovni bekor qilamiz (otmen)
     if (selectedShoe && selectedShoe.id === shoe.id) {
       setSelectedShoe(null);
     } else {
       setSelectedShoe(shoe);
     }
+  };
+
+  const addToCart = (shoe, event) => {
+    event.stopPropagation(); // Kartochka bosilib ketmasligi uchun
+    setCart([...cart, shoe]);
+    alert(`${shoe.name} added to cart!`);
+  };
+
+  const viewDetails = (shoe, event) => {
+    event.stopPropagation(); // Kartochka bosilib ketmasligi uchun
+    alert(`Viewing details for ${shoe.name}`);
   };
 
   return (
@@ -77,19 +88,17 @@ function App() {
 
       <div className="shoes-grid">
         {SHOES.map((shoe) => (
-          // Dinamik class qo'shamiz: agar tanlangan bo'lsa 'selected' klassi qo'shiladi
           <div
             key={shoe.id}
-            className={`shoe-card ${selectedShoe?.id === shoe.id ? 'selected' : ''}`}
+            className={`shoe-card ${selectedShoe?.id === shoe.id ? 'selected' : ''} ${cart.some(item => item.id === shoe.id) ? 'in-cart' : ''}`}
             onClick={() => handleCardClick(shoe)}
           >
             <div className="image-container">
               <img src={shoe.image} alt={shoe.name} />
               <button className="heart-btn" onClick={(e) => {
-                e.stopPropagation(); // Yurakchani bosganda kartochka bosilib ketmasligi uchun
-                // Yurakcha bosilgandagi mantiqni keyin qo'shamiz
+                e.stopPropagation();
               }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                 </svg>
               </button>
@@ -121,6 +130,11 @@ function App() {
               </div>
             </div>
 
+            {/* Tugmalar qismi (YANGI) */}
+            <div className="card-actions">
+              <button className="add-to-cart-btn" onClick={(e) => addToCart(shoe, e)}>Add to Cart</button>
+              <button className="details-btn" onClick={(e) => viewDetails(shoe, e)}>Details</button>
+            </div>
           </div>
         ))}
       </div>
