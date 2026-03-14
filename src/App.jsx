@@ -8,6 +8,61 @@ const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 // Python (FastAPI) server manzili
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
+// === RASM SLAYDERI KOMPONENTI ===
+const ProductImageSlider = ({ images, name, onImageClick }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="image-container empty-image" onClick={onImageClick}>
+        <span>Rasm yo'q</span>
+      </div>
+    );
+  }
+
+  if (images.length === 1) {
+    return (
+      <div className="image-container" onClick={onImageClick}>
+        <img src={images[0]} alt={name} />
+      </div>
+    );
+  }
+
+  const nextImage = (event) => {
+    event.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1 === images.length ? 0 : prev + 1));
+  };
+
+  const prevImage = (event) => {
+    event.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  return (
+    <div className="image-container product-slider" onClick={onImageClick}>
+      <button className="slider-btn prev-btn" onClick={prevImage}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+
+      <img src={images[currentImageIndex]} alt={`${name} - ${currentImageIndex + 1}`} className="slider-img" />
+
+      <button className="slider-btn next-btn" onClick={nextImage}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+
+      <div className="slider-dots">
+        {images.map((_, index) => (
+          <span
+            key={index}
+            className={`dot ${index === currentImageIndex ? 'active' : ''}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// === ASOSIY Ilova KOMPONENTI ===
 function App() {
   const [SHOES, setSHOES] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,8 +109,9 @@ function App() {
 
   const calculateTotal = () => {
     const total = cart.reduce((sum, item) => {
-      const numericPrice = parseFloat(item.price.replace(/[^\d.]/g, ''));
-      return sum + numericPrice;
+      const priceStr = String(item.price);
+      const numericPrice = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+      return isNaN(numericPrice) ? sum : sum + numericPrice;
     }, 0);
     return total.toFixed(2);
   };
@@ -87,6 +143,7 @@ function App() {
         setIsCartOpen(true);
       }
     };
+
     const handleBackButtonClick = () => setIsCartOpen(false);
 
     WebApp.MainButton.onClick(handleMainButtonClick);
@@ -103,7 +160,12 @@ function App() {
     const sizeToAdd = size || shoe.sizes[0];
 
     if (!cart.some(item => item.id === shoe.id && item.selectedSize === sizeToAdd)) {
-      setCart([...cart, { ...shoe, selectedSize: sizeToAdd, cartItemId: Date.now() }]);
+      setCart([...cart, {
+        ...shoe,
+        selectedSize: sizeToAdd,
+        cartItemId: Date.now(),
+        cartItemImage: shoe.images && shoe.images.length > 0 ? shoe.images[0] : ''
+      }]);
       if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('light');
     }
   };
@@ -119,10 +181,11 @@ function App() {
     if (selectedBrand !== "All") {
       result = result.filter(shoe => shoe.brand === selectedBrand);
     }
+    const priceReplace = (price) => parseFloat(String(price).replace(/[^\d.]/g, ''));
     if (sortOrder === "Price: Low to High") {
-      result.sort((a, b) => parseFloat(a.price.replace(/[^\d.]/g, '')) - parseFloat(b.price.replace(/[^\d.]/g, '')));
+      result.sort((a, b) => priceReplace(a.price) - priceReplace(b.price));
     } else if (sortOrder === "Price: High to Low") {
-      result.sort((a, b) => parseFloat(b.price.replace(/[^\d.]/g, '')) - parseFloat(a.price.replace(/[^\d.]/g, '')));
+      result.sort((a, b) => priceReplace(b.price) - priceReplace(a.price));
     }
     return result;
   }, [SHOES, selectedBrand, sortOrder]);
@@ -131,13 +194,14 @@ function App() {
     if (filterName === "Brand" || filterName === "Sort by") {
       setActiveFilter(filterName);
     } else {
-      if(WebApp.showAlert) WebApp.showAlert("Bu filtr tez orada qo'shiladi!");
-      else alert("Bu filtr tez orada qo'shiladi!");
+      if(WebApp.showAlert) WebApp.showAlert("Bu filtr tez orada ishga tushadi!");
+      else alert("Bu filtr tez orada ishga tushadi!");
     }
   };
 
   return (
     <div className="app-container">
+      {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && (
         <>
           <div className="filters-scroll">
@@ -169,10 +233,16 @@ function App() {
                 const isInCart = cart.some(item => item.id === shoe.id);
                 return (
                   <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
-                    <div className="image-container" onClick={() => setDetailsModal(shoe)}>
-                      <img src={shoe.image} alt={shoe.name} />
-                      {shoe.isDeal && <div className="deal-badge">Deal</div>}
-                    </div>
+
+                    {/* Rasm Slayderi */}
+                    <ProductImageSlider
+                      images={shoe.images}
+                      name={shoe.name}
+                      onImageClick={() => setDetailsModal(shoe)}
+                    />
+
+                    {shoe.isDeal && <div className="deal-badge">Deal</div>}
+
                     <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                       <div className="brand">{shoe.brand}</div>
                       <div className="name">{shoe.name}</div>
@@ -180,6 +250,7 @@ function App() {
                         <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
                       </div>
                     </div>
+
                     <div className="card-actions">
                       <button
                         className="add-to-cart-btn"
@@ -205,6 +276,7 @@ function App() {
         </>
       )}
 
+      {/* 2. SAVAT SAHIFASI */}
       {isCartOpen && (
         <div className="cart-page">
           <div className="cart-header-row">
@@ -215,7 +287,7 @@ function App() {
           <div className="cart-list">
             {cart.map((item, index) => (
               <div key={item.cartItemId || index} className="cart-item">
-                <img src={item.image} alt={item.name} className="cart-item-img" />
+                <img src={item.cartItemImage} alt={item.name} className="cart-item-img" />
                 <div className="cart-item-info">
                   <p className="cart-item-brand">{item.brand}</p>
                   <p className="cart-item-name">{item.name}</p>
@@ -246,11 +318,20 @@ function App() {
         </div>
       )}
 
+      {/* 3. MODAL OYNA */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setDetailsModal(null)}>✕</button>
-            <img src={detailsModal.image} alt={detailsModal.name} className="modal-img" />
+
+            <div className="modal-slider-container" style={{ margin: '0 auto 24px auto', width: '100%', height: '260px' }}>
+                <ProductImageSlider
+                    images={detailsModal.images}
+                    name={detailsModal.name}
+                    onImageClick={null}
+                />
+            </div>
+
             <div className="modal-body">
               <h2 className="modal-brand">{detailsModal.brand}</h2>
               <p className="modal-name">{detailsModal.name}</p>
@@ -299,6 +380,7 @@ function App() {
         </div>
       )}
 
+      {/* 4. FILTR OYNASI */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
