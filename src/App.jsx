@@ -8,13 +8,10 @@ const SHOES = [
   { id: 2, brand: "Nike Sportswear", name: "AIR FORCE 1 - Trainers - white", price: "€89.95", oldPrice: "€99.95", discount: "-10%", isDeal: true, image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80", description: "Klassik oq rangdagi afsonaviy Air Force 1. Har qanday kiyim bilan ajoyib mos tushadi." },
   { id: 3, brand: "Nike Sportswear", name: "AIR FORCE 1 '07 - Trainers - white", price: "€95.95", oldPrice: "€119.95", discount: "-20%", isDeal: true, image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80", description: "Premium charm va havo yostig'iga ega original Air Force 1 '07 modeli." },
   { id: 4, brand: "Puma", name: "RS-X - Trainers - dark blue", price: "€75.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Sport va faol hayot tarzi uchun mo'ljallangan yengil va mustahkam Puma krossovkasi." },
-  // Yana bitta yangi mahsulot qo'shamiz (filtrni yaxshiroq sezish uchun)
   { id: 5, brand: "Puma", name: "Suede Classic - Trainers - black", price: "€65.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Klassik Puma Suede." }
 ];
 
 const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
-
-// Bazadagi bor brendlarni avtomatik yig'ib olish
 const BRANDS = ["All", ...new Set(SHOES.map(shoe => shoe.brand))];
 const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 
@@ -23,8 +20,7 @@ function App() {
   const [detailsModal, setDetailsModal] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Filtrlash uchun statelar
-  const [activeFilter, setActiveFilter] = useState(null); // 'Brand' yoki 'Sort by'
+  const [activeFilter, setActiveFilter] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [sortOrder, setSortOrder] = useState("Default");
 
@@ -90,22 +86,16 @@ function App() {
     if (cart.length === 1) setIsCartOpen(false);
   };
 
-  // --- FILTRLASH VA SARALASH MANTIG'I ---
   const displayedShoes = useMemo(() => {
     let result = [...SHOES];
-
-    // 1. Brand bo'yicha filtrlash
     if (selectedBrand !== "All") {
       result = result.filter(shoe => shoe.brand === selectedBrand);
     }
-
-    // 2. Narx bo'yicha saralash
     if (sortOrder === "Price: Low to High") {
       result.sort((a, b) => parseFloat(a.price.replace(/[^\d.]/g, '')) - parseFloat(b.price.replace(/[^\d.]/g, '')));
     } else if (sortOrder === "Price: High to Low") {
       result.sort((a, b) => parseFloat(b.price.replace(/[^\d.]/g, '')) - parseFloat(a.price.replace(/[^\d.]/g, '')));
     }
-
     return result;
   }, [selectedBrand, sortOrder]);
 
@@ -113,18 +103,18 @@ function App() {
     if (filterName === "Brand" || filterName === "Sort by") {
       setActiveFilter(filterName);
     } else {
-      WebApp.showAlert("Bu filtr tez orada qo'shiladi!"); // Boshqa filtrlar uchun vaqtinchalik xabar
+      WebApp.showAlert("Bu filtr tez orada qo'shiladi!");
     }
   };
 
   return (
     <div className="app-container">
+      {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && (
         <>
           <div className="filters-scroll">
             <div className="filters-container">
               {FILTERS.map((filter, index) => {
-                // Agar shu filtr tanlangan bo'lsa, qorayib turadi
                 const isActive = (filter === "Brand" && selectedBrand !== "All") ||
                                  (filter === "Sort by" && sortOrder !== "Default");
                 return (
@@ -147,6 +137,7 @@ function App() {
             {displayedShoes.length > 0 ? (
               displayedShoes.map((shoe) => (
                 <div key={shoe.id} className="shoe-card">
+                  {/* Shu yerda bosilganda Modal ochiladi */}
                   <div className="image-container" onClick={() => setDetailsModal(shoe)}>
                     <img src={shoe.image} alt={shoe.name} />
                     {shoe.isDeal && <div className="deal-badge">Deal</div>}
@@ -170,10 +161,64 @@ function App() {
         </>
       )}
 
-      {/* --- SAVAT VA MODAL OYNALAR (Avvalgidek qoladi) --- */}
-      {/* ... (Savat kodi) ... */}
+      {/* 2. SAVAT SAHIFASI */}
+      {isCartOpen && (
+        <div className="cart-page">
+          <h2 className="cart-title">Your Cart</h2>
+          <div className="cart-list">
+            {cart.map((item, index) => (
+              <div key={index} className="cart-item">
+                <img src={item.image} alt={item.name} className="cart-item-img" />
+                <div className="cart-item-info">
+                  <p className="cart-item-brand">{item.brand}</p>
+                  <p className="cart-item-name">{item.name}</p>
+                  <p className="cart-item-price">{item.price}</p>
+                </div>
+                <button className="remove-btn" onClick={() => removeFromCart(index)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="cart-total-box">
+            <span>Total:</span>
+            <span>€{calculateTotal()}</span>
+          </div>
+        </div>
+      )}
 
-      {/* --- FILTR PASTKI OYNASI (BOTTOM SHEET) --- */}
+      {/* 3. MODAL OYNA (Details) */}
+      {detailsModal && (
+        <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setDetailsModal(null)}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <img src={detailsModal.image} alt={detailsModal.name} className="modal-img" />
+            <div className="modal-body">
+              <h2 className="modal-brand">{detailsModal.brand}</h2>
+              <p className="modal-name">{detailsModal.name}</p>
+              <div className="modal-price-box">
+                <span className="modal-price">{detailsModal.price}</span>
+                {detailsModal.isDeal && <span className="modal-discount">{detailsModal.discount} OFF</span>}
+              </div>
+              <div className="modal-divider"></div>
+              <p className="modal-description">{detailsModal.description}</p>
+              <button className="add-to-cart-btn large" onClick={() => { addToCart(detailsModal, null); setDetailsModal(null); }}>
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. FILTR PASTKI OYNASI (BOTTOM SHEET) */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
@@ -181,7 +226,6 @@ function App() {
               <h3>{activeFilter}</h3>
               <button className="sheet-close" onClick={() => setActiveFilter(null)}>✕</button>
             </div>
-
             <div className="sheet-options">
               {activeFilter === "Brand" && BRANDS.map(brand => (
                 <button
@@ -192,7 +236,6 @@ function App() {
                   {brand}
                 </button>
               ))}
-
               {activeFilter === "Sort by" && SORT_OPTIONS.map(option => (
                 <button
                   key={option}
