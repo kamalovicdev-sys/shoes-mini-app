@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Admin.css';
 
 // API manzilingiz (Koyeb havolangizni yozing)
-const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app/";
+const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 function Admin() {
   const [activeTab, setActiveTab] = useState('products');
