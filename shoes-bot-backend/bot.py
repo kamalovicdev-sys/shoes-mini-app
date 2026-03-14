@@ -1,77 +1,84 @@
 import asyncio
 import json
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types.web_app_info import WebAppInfo
 from aiogram.filters import CommandStart
 
 # 1. BOT TOKENINI SHU YERGA YOZING
 TOKEN = "8667557940:AAFWZOlFd0PO_acVHRyV3BCFqYGRTA59r_Y"
 
-# 2. Agar buyurtmalar sizga ham kelishini xohlasangiz, o'z Telegram ID raqamingizni yozing.
-# O'z ID raqamingizni @userinfobot orqali bilib olishingiz mumkin.
-# Hozircha bo'sh qoldirsangiz ham ishlayveradi (faqat mijozga boradi).
-ADMIN_ID = None
+# 2. O'ZINGIZNING (ADMIN) TELEGRAM ID RAQAMINGIZNI YOZING
+ADMIN_ID = 692138272
+
+# 3. NETLIFY BERGAN HAVOLANI SHU YERGA YOZING (oxirida / belgisi bo'lmasin)
+WEB_APP_URL = "https://lfshoes.netlify.app/"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 
-# /start buyrug'i uchun
 @dp.message(CommandStart())
 async def start_cmd(message: Message):
+    # Telegram klaviaturasida Web App tugmasini yaratamiz
+    kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🛍 Do'konni ochish", web_app=WebAppInfo(url=WEB_APP_URL))]
+        ],
+        resize_keyboard=True
+    )
+
     await message.answer(
         f"Assalomu alaykum, {message.from_user.first_name}! 👋\n\n"
-        f"Bizning poyabzallar do'koniga xush kelibsiz. Pastdagi <b>Menu (yoki Katalog)</b> tugmasini bosib buyurtma berishingiz mumkin.",
+        f"Pastdagi <b>🛍 Do'konni ochish</b> tugmasini bosib xaridni boshlang.",
+        reply_markup=kb,  # Klaviaturani xabarga ulaymiz
         parse_mode="HTML"
     )
 
 
-# Mini App dan kelgan WebApp ma'lumotlarini qabul qiluvchi funksiya
 @dp.message(F.web_app_data)
-async def handle_web_app_data(message: Message):
-    # 1. Frontenddan kelgan JSON ma'lumotni ushlab olamiz va o'qiymiz
+async def handle_web_app_data(message: Message, bot: Bot):
     raw_data = message.web_app_data.data
     data = json.loads(raw_data)
 
-    # 2. Agar bu ma'lumot turi 'order' (buyurtma) bo'lsa
     if data.get("type") == "order":
-        items = data.get("items", [])  # Savatdagi mahsulotlar ro'yxati
-        total = data.get("total", "0")  # Jami narx
+        items = data.get("items", [])
+        total = data.get("total", "0")
 
-        # Mijozning username'ini olish (agar yo'q bo'lsa, ismi chiqadi)
-        username = f"@{message.from_user.username}" if message.from_user.username else "Yo'q"
-
-        # 3. Chiroyli xabar (Chek) matnini yig'ishni boshlaymiz
-        text = f"🎉 <b>YANGI BUYURTMA QABUL QILINDI!</b>\n\n"
-        text += f"👤 <b>Mijoz:</b> {message.from_user.full_name}\n"
-        text += f"📞 <b>Username:</b> {username}\n\n"
-        text += "🛒 <b>Savatdagi mahsulotlar:</b>\n"
-
-        # Ro'yxatdagi har bir mahsulotni bittadan qatorga qo'shib chiqamiz
+        items_text = ""
         for index, item in enumerate(items, start=1):
-            text += f"{index}. {item['brand']} - {item['name']}\n"
-            text += f"   <i>Narxi:</i> {item['price']}\n\n"
+            items_text += f"{index}. {item['brand']} {item['name']}\n   └ <i>Narxi:</i> {item['price']}\n"
 
-        text += f"💰 <b>JAMI SUMMA:</b> €{total}\n\n"
-        text += "<i>✅ Buyurtmangiz tasdiqlandi. Tez orada menejerlarimiz siz bilan bog'lanishadi! Xaridingiz uchun rahmat.</i>"
+        # Mijozga yuboriladigan chek
+        user_receipt = (
+            f"🧾 <b>Sizning buyurtma chekingiz</b>\n\n"
+            f"🛒 <b>Xarid qilingan mahsulotlar:</b>\n"
+            f"{items_text}\n"
+            f"💰 <b>Jami to'lov:</b> €{total}\n\n"
+            f"<i>✅ Buyurtmangiz muvaffaqiyatli qabul qilindi! Tez orada menejerlarimiz siz bilan bog'lanishadi. Xaridingiz uchun rahmat.</i>"
+        )
+        await message.answer(user_receipt, parse_mode="HTML")
 
-        # 4. Ushbu xabarni mijozning o'ziga yuboramiz
-        await message.answer(text, parse_mode="HTML")
-
-        # 5. Agar ADMIN_ID kiritilgan bo'lsa, adminga (o'zingizga) ham nusxasini tashlaydi
+        # Adminga yuboriladigan xabarnoma
         if ADMIN_ID:
+            username = f"@{message.from_user.username}" if message.from_user.username else "Username yo'q"
+            admin_notification = (
+                f"🚨 <b>YANGI BUYURTMA QABUL QILINDI!</b>\n\n"
+                f"👤 <b>Mijoz:</b> {message.from_user.full_name}\n"
+                f"🔗 <b>Username:</b> {username}\n"
+                f"🆔 <b>ID:</b> <code>{message.from_user.id}</code>\n\n"
+                f"📦 <b>Buyurtma tarkibi:</b>\n"
+                f"{items_text}\n"
+                f"💵 <b>JAMI SUMMA:</b> €{total}"
+            )
             try:
-                await bot.send_message(
-                    chat_id=ADMIN_ID,
-                    text=f"⚠️ <b>DIQQAT, YANGI BUYURTMA!</b>\n\n" + text.replace("✅ Buyurtmangiz tasdiqlandi.", ""),
-                    parse_mode="HTML"
-                )
+                await bot.send_message(chat_id=ADMIN_ID, text=admin_notification, parse_mode="HTML")
             except Exception as e:
                 print(f"Adminga xabar yuborishda xatolik: {e}")
 
 
 async def main():
-    print("Bot muvaffaqiyatli ishga tushdi va xabarlarni kutmoqda...")
+    print("Bot ishga tushdi...")
     await dp.start_polling(bot)
 
 
