@@ -1,5 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* YANGI: Barcha elementlar qolipdan chiqib ketmasligi uchun */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* Mobilda tugma bosilganda ko'k fon chiqishini yo'qotadi */
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* Gorizontal scroll (qimirlash) ni butunlay kesib tashlaydi */
+  background-color: #E5E5EA;
+}
+
+.app-container {
+  font-family: 'Inter', sans-serif;
+  width: 100%; /* YANGI: 100% kenglik */
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: #F9FAFB;
+  min-height: 100dvh; /* YANGI: 100vh o'rniga 100dvh - mobil brauzerlar paneli uchun aniqroq */
+  position: relative;
+  box-shadow: 0 0 24px rgba(0,0,0,0.1);
+  overflow-x: hidden;
+}
+
+/* Modallar va Kartochkalar toshib ketmasligi uchun */
+.shoes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px 20px 100px 20px;
+  width: 100%; /* YANGI */
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 body {
   margin: 0;
   background-color: #E5E5EA; /* Kompyuterda ochilsa atrofi qoramtir turadi */
