@@ -2,32 +2,51 @@ import { useState, useEffect, useMemo } from 'react'
 import './App.css'
 
 const WebApp = window.Telegram.WebApp;
-
-// 1. Bazaga "sizes" (razmerlar) qo'shildi
-const SHOES = [
-  { id: 1, brand: "New Balance", name: "MR530 UNISEX - Trainers - sea salt", price: "€129.95", isSponsored: true, image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500&q=80", description: "Kundalik kiyish uchun juda qulay va zamonaviy uslubdagi krossovka.", sizes: [39, 40, 41, 42, 43] },
-  { id: 2, brand: "Nike Sportswear", name: "AIR FORCE 1 - Trainers - white", price: "€89.95", oldPrice: "€99.95", discount: "-10%", isDeal: true, image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80", description: "Klassik oq rangdagi afsonaviy Air Force 1. Har qanday kiyim bilan ajoyib mos tushadi.", sizes: [40, 41, 42, 44] },
-  { id: 3, brand: "Nike Sportswear", name: "AIR FORCE 1 '07 - Trainers - white", price: "€95.95", oldPrice: "€119.95", discount: "-20%", isDeal: true, image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&q=80", description: "Premium charm va havo yostig'iga ega original Air Force 1 '07 modeli.", sizes: [39, 41, 42] },
-  { id: 4, brand: "Puma", name: "RS-X - Trainers - dark blue", price: "€75.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Sport va faol hayot tarzi uchun mo'ljallangan yengil va mustahkam Puma krossovkasi.", sizes: [40, 42, 43] },
-  { id: 5, brand: "Puma", name: "Suede Classic - Trainers - black", price: "€65.00", image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&q=80", description: "Klassik Puma Suede.", sizes: [38, 39, 40, 41] }
-];
-
 const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
-const BRANDS = ["All", ...new Set(SHOES.map(shoe => shoe.brand))];
 const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 
+// Python (FastAPI) server manzili
+const API_URL = "http://localhost:8001";
+
 function App() {
+  // === 1. BAZADAGI MAHSULOTLAR UCHUN STATE ===
+  const [SHOES, setSHOES] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Yuklanish jarayoni
+
   const [cart, setCart] = useState([]);
   const [detailsModal, setDetailsModal] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-
-  // Yangi qo'shilgan State: Tanlangan razmerni saqlash
   const [selectedSize, setSelectedSize] = useState(null);
 
   const [activeFilter, setActiveFilter] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [sortOrder, setSortOrder] = useState("Default");
 
+  // === 2. BAZADAN MA'LUMOTLARNI TORTIB KELISH (FETCH) ===
+  useEffect(() => {
+    fetch(`${API_URL}/api/products`)
+      .then(res => res.json())
+      .then(data => {
+        // Backenddan kelgan rasm manziliga server manzilini qo'shamiz
+        const formattedData = data.map(item => ({
+          ...item,
+          image: `${API_URL}${item.image}`
+        }));
+        setSHOES(formattedData);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Bazadan ma'lumot olishda xatolik:", err);
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Bazadagi bor brendlarni avtomatik yig'ib olish
+  const BRANDS = useMemo(() => {
+    return ["All", ...new Set(SHOES.map(shoe => shoe.brand))];
+  }, [SHOES]);
+
+  // Telegram sozlamalari
   useEffect(() => {
     if (WebApp) {
       WebApp.ready();
@@ -36,7 +55,6 @@ function App() {
     }
   }, []);
 
-  // Modal oyna ochilganda avvalgi tanlangan razmerni tozalash
   useEffect(() => {
     if (detailsModal) {
       setSelectedSize(null);
@@ -89,16 +107,11 @@ function App() {
     };
   }, [isCartOpen, cart]);
 
-  // Savatga qo'shish funksiyasi endi razmerni ham qabul qiladi
   const addToCart = (shoe, size, event) => {
     if (event) event.stopPropagation();
-
-    // Agar Grid'dan to'g'ridan-to'g'ri qo'shilsa (size=null), birinchi razmerni oladi
     const sizeToAdd = size || shoe.sizes[0];
 
-    // Aynan shu poyabzalning shu razmeri savatda borligini tekshiramiz
     if (!cart.some(item => item.id === shoe.id && item.selectedSize === sizeToAdd)) {
-      // Yangi id beramiz (o'chirishda muammo bo'lmasligi uchun) va razmerni qo'shamiz
       setCart([...cart, { ...shoe, selectedSize: sizeToAdd, cartItemId: Date.now() }]);
       if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('light');
     }
@@ -121,7 +134,7 @@ function App() {
       result.sort((a, b) => parseFloat(b.price.replace(/[^\d.]/g, '')) - parseFloat(a.price.replace(/[^\d.]/g, '')));
     }
     return result;
-  }, [selectedBrand, sortOrder]);
+  }, [SHOES, selectedBrand, sortOrder]);
 
   const handleFilterClick = (filterName) => {
     if (filterName === "Brand" || filterName === "Sort by") {
@@ -159,7 +172,9 @@ function App() {
           </div>
 
           <div className="shoes-grid">
-            {displayedShoes.length > 0 ? (
+            {isLoading ? (
+              <div className="empty-state">Ma'lumotlar yuklanmoqda...</div>
+            ) : displayedShoes.length > 0 ? (
               displayedShoes.map((shoe) => {
                 const isInCart = cart.some(item => item.id === shoe.id);
                 return (
@@ -188,7 +203,7 @@ function App() {
                 );
               })
             ) : (
-              <div className="empty-state">Bu brendda hozircha mahsulot yo'q</div>
+              <div className="empty-state">Hozircha mahsulot qo'shilmagan</div>
             )}
           </div>
 
@@ -242,7 +257,7 @@ function App() {
         </div>
       )}
 
-      {/* 3. MODAL OYNA (Details va Razmerlar) */}
+      {/* 3. MODAL OYNA */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -257,7 +272,6 @@ function App() {
               </div>
               <div className="modal-divider"></div>
 
-              {/* === RAZMER TANLASH QISMI === */}
               <div className="modal-sizes">
                 <p className="sizes-title">O'lchamni tanlang:</p>
                 <div className="sizes-list">
@@ -275,7 +289,6 @@ function App() {
 
               <p className="modal-description">{detailsModal.description}</p>
 
-              {/* Razmerga qarab Savatga qo'shish tugmasi mantiqi */}
               <button
                 className="add-to-cart-btn large"
                 onClick={() => {
@@ -298,7 +311,7 @@ function App() {
         </div>
       )}
 
-      {/* 4. FILTR PASTKI OYNASI (BOTTOM SHEET) */}
+      {/* 4. FILTR PASTKI OYNASI */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
