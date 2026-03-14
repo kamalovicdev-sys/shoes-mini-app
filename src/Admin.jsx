@@ -61,7 +61,7 @@ function Admin() {
 
     try {
       // Python API'ga so'rov yuborish (portingiz 8000 bo'lishi kerak, agar 8001 bo'lsa shuni o'zgartiring)
-      const response = await fetch("http://localhost:8001/api/products", {
+      const response = await fetch("competent-mastodon-lfshoes-751b6276.koyeb.app/api/products", {
         method: "POST",
         body: submitData,
       });
