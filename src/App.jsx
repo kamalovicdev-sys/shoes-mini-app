@@ -27,12 +27,8 @@ function App() {
     fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
-        // Backenddan kelgan rasm manziliga server manzilini qo'shamiz
-        const formattedData = data.map(item => ({
-          ...item,
-          image: `${API_URL}${item.image}`
-        }));
-        setSHOES(formattedData);
+        // Endi backenddan kelayotgan rasm tayyor ImgBB linki, o'zgartirish shart emas!
+        setSHOES(data);
         setIsLoading(false);
       })
       .catch(err => {

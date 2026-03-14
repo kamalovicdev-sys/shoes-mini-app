@@ -1,45 +1,38 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-import sqlite3
-import shutil
+import psycopg2  # SQLite o'rniga endi shundan foydalanamiz
+import requests
+import base64
 import os
-import json
 
 app = FastAPI()
 
-# React (Frontend) va Python (Backend) turli xil portlarda bo'lgani uchun
-# ular bir-biri bilan gaplasha olishi uchun CORS ruxsatini beramiz
+# === SIZNING MA'LUMOTLARINGIZ ===
+DATABASE_URL = "postgresql://neondb_owner:npg_nxpYqO7IMuf4@ep-flat-feather-adypfd7f-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+IMGBB_API_KEY = "8cc14f9c559efa0c3a02287ebd1c4d6f"
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Barcha saytlardan keladigan so'rovlarga ruxsat (Netlify uchun ham kerak)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rasmlarni saqlash uchun "uploads" degan papka yaratamiz
-UPLOAD_DIR = "uploads"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
 
-# "uploads" papkasidagi rasmlarni internetda ko'rish imkonini beramiz
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-
-# Ma'lumotlar bazasini (SQLite) sozlash
+# Postgres bazasini tayyorlash
 def init_db():
-    conn = sqlite3.connect("shop.db")
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    # Mahsulotlar jadvalini yaratish
+    # Postgres'da AUTOINCREMENT o'rniga SERIAL ishlatiladi
     cursor.execute('''
                    CREATE TABLE IF NOT EXISTS products
                    (
                        id
-                       INTEGER
+                       SERIAL
                        PRIMARY
-                       KEY
-                       AUTOINCREMENT,
+                       KEY,
                        brand
                        TEXT,
                        name
@@ -64,61 +57,61 @@ def init_db():
     conn.close()
 
 
-# Dastur ishga tushganda bazani tayyorlab qo'yadi
 init_db()
 
 
-# === 1. MAHSULOT QO'SHISH (POST) API ===
+# === 1. MAHSULOT QO'SHISH (POST) ===
 @app.post("/api/products")
 async def add_product(
         brand: str = Form(...),
         name: str = Form(...),
         price: str = Form(...),
         description: str = Form(...),
-        sizes: str = Form(...),  # "39, 40, 41" ko'rinishida keladi
+        sizes: str = Form(...),
         isDeal: str = Form("false"),
         oldPrice: str = Form(""),
         discount: str = Form(""),
-        image: UploadFile = File(...)  # Rasm fayli shu yerga keladi
+        image: UploadFile = File(...)
 ):
-    # 1. Rasmni kompyuterga (serverga) saqlash
-    image_filename = f"{image.filename}"
-    file_path = os.path.join(UPLOAD_DIR, image_filename)
+    # ImgBB ga yuklash
+    image_bytes = await image.read()
+    encoded_image = base64.b64encode(image_bytes).decode('utf-8')
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
+    imgbb_url = f"https://api.imgbb.com/1/upload?key={IMGBB_API_KEY}"
+    response = requests.post(imgbb_url, data={"image": encoded_image})
 
-    # Rasmning internetdagi manzili (masalan: http://localhost:8000/uploads/rasm.jpg)
-    image_url = f"/uploads/{image_filename}"
+    if response.status_code == 200:
+        img_data = response.json()
+        image_url = img_data["data"]["url"]
+    else:
+        return {"status": "error", "message": "Rasmni ImgBB ga yuklashda xatolik yuz berdi!"}
 
-    # 2. Ma'lumotlarni bazaga (SQLite) yozish
-    conn = sqlite3.connect("shop.db")
+    # Ma'lumotlarni Neon.tech (Postgres) ga yozish
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-
+    # Postgres'da ma'lumot qabul qilish uchun ? o'rniga %s ishlatiladi
     cursor.execute('''
                    INSERT INTO products (brand, name, price, image_url, description, sizes, isDeal, oldPrice, discount)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                    ''', (brand, name, price, image_url, description, sizes, isDeal == "true", oldPrice, discount))
-
     conn.commit()
     conn.close()
 
-    return {"status": "success", "message": "Mahsulot bazaga muvaffaqiyatli qo'shildi!"}
+    return {"status": "success", "message": "Mahsulot muvaffaqiyatli onlayn bazaga qo'shildi!"}
 
 
+# === 2. BARCHA MAHSULOTLARNI OLISH (GET) ===
 @app.get("/api/products")
 async def get_products():
-    conn = sqlite3.connect("shop.db")
+    conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products")
+    cursor.execute("SELECT * FROM products ORDER BY id DESC")  # Yangilari birinchi chiqadi
     rows = cursor.fetchall()
     conn.close()
 
     products = []
     for row in rows:
-        # Agar sizes bo'sh bo'lsa xato bermasligi uchun tekshiramiz
         sizes_str = row[6] if row[6] else ""
-
         products.append({
             "id": row[0],
             "brand": row[1],
@@ -126,7 +119,6 @@ async def get_products():
             "price": row[3],
             "image": row[4],
             "description": row[5],
-            # XATOLIK SHU YERDA EDI: trim() o'rniga strip() yozildi
             "sizes": [int(s.strip()) for s in sizes_str.split(",") if s.strip().isdigit()],
             "isDeal": bool(row[7]),
             "oldPrice": row[8],
