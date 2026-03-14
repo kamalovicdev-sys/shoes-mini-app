@@ -6,7 +6,7 @@ const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
 const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 
 // Python (FastAPI) server manzili
-const API_URL = "http://localhost:8001";
+const API_URL = "competent-mastodon-lfshoes-751b6276.koyeb.app/";
 
 function App() {
   // === 1. BAZADAGI MAHSULOTLAR UCHUN STATE ===
