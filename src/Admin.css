@@ -1,211 +1,263 @@
-/* Faqat mobil ekranga moslashtirilgan Admin UI */
+/* Google fontidan zamonaviy 'Inter' shriftini chaqiramiz */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .admin-container {
-  max-width: 480px; /* Kompyuterda ochilsa ham xuddi telefondek ingichka turadi */
-  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  background-color: #F3F4F6; /* Yumshoq kulrang fon */
   min-height: 100vh;
-  background-color: #f4f6f8;
-  font-family: sans-serif;
-  color: #333;
+  color: #111827;
+  max-width: 480px; /* Kompyuterda ham telefon ekrani shaklida turadi */
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 24px rgba(0,0,0,0.08); /* Chekkalariga chiroyli soya */
 }
 
+/* === HEADER (TEPA QISM) === */
 .admin-header {
-  background-color: #212529;
-  color: white;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: #FFFFFF;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .admin-header h2 {
-  margin: 0;
   font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827; /* Qoramtir-kulrang */
+  letter-spacing: -0.5px;
 }
 
+.logout-btn {
+  background-color: #FEF2F2;
+  color: #EF4444;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #FEE2E2;
+}
+
+/* === TABLAR (MENYU) === */
 .admin-tabs {
   display: flex;
-  background-color: white;
-  border-bottom: 1px solid #ddd;
+  background-color: #FFFFFF;
+  padding: 0 16px;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .admin-tabs button {
   flex: 1;
-  padding: 15px;
-  background: none;
+  padding: 16px 0;
+  background: transparent;
   border: none;
   font-size: 15px;
-  font-weight: bold;
-  color: #666;
-  border-bottom: 3px solid transparent;
+  font-weight: 600;
+  color: #6B7280;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .admin-tabs button.active {
-  color: #007bff;
-  border-bottom: 3px solid #007bff;
+  color: #111827;
+  border-bottom-color: #111827; /* Faol menyu tagida qora chiziq */
 }
 
+/* === KONTENT VA KARTOCHKA === */
 .admin-content {
-  padding: 20px;
+  padding: 24px 20px;
 }
 
 .admin-section {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .admin-section h3 {
   margin-top: 0;
-  margin-bottom: 15px;
+  margin-bottom: 24px;
   font-size: 18px;
+  font-weight: 700;
+  color: #111827;
 }
 
-/* --- MAHSULOT QO'SHISH FORMASI DIZAYNI --- */
+/* === FORMA INPUTLARI === */
 .add-product-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 15px;
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .form-group label {
   font-size: 13px;
-  font-weight: 700;
-  color: #495057;
+  font-weight: 600;
+  color: #4B5563;
 }
 
 .form-group input[type="text"],
-.form-group input[type="url"],
+.form-group input[type="password"],
 .form-group textarea {
-  padding: 12px 14px;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  padding: 14px 16px;
+  border-radius: 12px;
   font-size: 15px;
+  color: #111827;
+  transition: all 0.2s ease;
   font-family: inherit;
-  color: #212529;
-  background-color: #f8f9fa;
-  transition: all 0.2s;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  background-color: #FFFFFF;
+  border-color: #111827;
+  box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.05); /* Qora focus soyasi */
 }
 
-.checkbox-group label {
-  display: flex;
+/* === RASM YUKLASH QISMI === */
+.image-upload-group {
+  background-color: #F9FAFB;
+  border: 2px dashed #D1D5DB;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 15px;
+}
+
+.image-upload-group input[type="file"]::file-selector-button {
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #374151;
   font-weight: 600;
-  color: #dc3545; /* Chegirma yozuvi biroz ajralib turishi uchun */
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 10px;
 }
 
-.checkbox-group input {
-  width: 18px;
-  height: 18px;
+.image-preview-box {
+  margin-top: 16px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+}
+
+.image-preview-box img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  background-color: #FFFFFF;
+  display: block;
+}
+
+/* === CHEGIRMA BELGILASH === */
+.checkbox-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #FEF2F2;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: #DC2626;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #FECACA;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #DC2626;
   cursor: pointer;
 }
 
-/* Chegirma belgilanganda ochiladigan qatorlar */
 .deal-fields {
+  background: #FFFBF1;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #FEF3C7;
   display: flex;
-  flex-direction: column; /* Kichik telefonda ustma-ust turadi */
+  flex-direction: column;
   gap: 12px;
-  background-color: #fff3cd; /* Sariq fon */
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px dashed #ffe69c;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-.deal-fields .form-group {
-  flex: 1;
-  width: 100%;
-}
-
-/* Ekran kengligi 400px dan katta bo'lganda (masalan katta smartfonlar yoki kompyuterda) yonma-yon bo'ladi */
+/* Katta telefonlarda chegirma qatorlari yonma-yon turadi */
 @media (min-width: 400px) {
   .deal-fields {
     flex-direction: row;
   }
+  .deal-fields .form-group {
+    flex: 1;
+  }
 }
 
+/* === ASOSIY TUGMA (SUBMIT) === */
 .submit-btn {
-  background-color: #212529;
-  color: white;
+  background-color: #111827; /* Korporativ qora rang */
+  color: #FFFFFF;
   border: none;
-  padding: 16px;
+  padding: 18px;
+  border-radius: 14px;
   font-size: 16px;
-  font-weight: 700;
-  border-radius: 10px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.2s;
+  width: 100%;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.2);
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
 }
 
 .submit-btn:hover {
-  background-color: #343a40;
+  background-color: #1F2937;
 }
 
-/* --- RASM YUKLASH VA PREVIEW DIZAYNI --- */
-.image-upload-group {
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px dashed #adb5bd;
-}
-
-.image-upload-group input[type="file"] {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #495057;
-  cursor: pointer;
-}
-
-/* Fayl tanlash tugmasini biroz chiroyliroq qilish (fayl tanlanguncha) */
-.image-upload-group input[type="file"]::file-selector-button {
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #212529;
-  font-weight: 600;
-  cursor: pointer;
-  margin-right: 15px;
-  transition: background-color 0.2s;
-}
-
-.image-upload-group input[type="file"]::file-selector-button:hover {
-  background-color: #dee2e6;
-}
-
-.image-preview-box {
-  margin-top: 15px;
-  width: 100%;
+/* === LOGIN OYNASI === */
+.login-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  background-color: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  padding: 24px;
+  background-color: #FFFFFF;
 }
 
-.image-preview-box img {
-  max-width: 100%;
-  max-height: 200px;
-  object-fit: contain;
-  border-radius: 4px;
+.login-container .admin-header {
+  background: transparent;
+  justify-content: center;
+  border: none;
+  padding-bottom: 10px;
+}
+
+.login-container .admin-header h2 {
+  font-size: 26px;
+  color: #111827;
+}
+
+.login-container .admin-content {
+  padding: 0;
 }
