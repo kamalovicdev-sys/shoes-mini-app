@@ -39,7 +39,8 @@ function Admin() {
         localStorage.setItem('adminToken', result.token);
         setIsAuthenticated(true);
       } else {
-        alert(result.message);
+        // Agar serverdan "message" kelmasa, FastAPI'ning "detail" xatosini chiqaradi
+        alert(result.message || result.detail || "Server topilmadi, havolani tekshiring!");
       }
     } catch (error) {
       console.error(error);
