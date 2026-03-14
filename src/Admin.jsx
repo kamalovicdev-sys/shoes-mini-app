@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Admin.css';
 
 // API manzilingiz (Koyeb havolangizni yozing)
@@ -7,20 +7,20 @@ const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app/";
 function Admin() {
   const [activeTab, setActiveTab] = useState('products');
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  // 1. Shu yerni to'g'irladik: faqat bitta marta e'lon qilinadi
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('adminToken');
+  });
 
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const [loginData, setLoginData] = useState({ username: '', password: '' });
 
   const [formData, setFormData] = useState({
     brand: '', name: '', price: '', image: null, description: '', sizes: '', isDeal: false, oldPrice: '', discount: ''
   });
+
   const [imagePreview, setImagePreview] = useState(null);
+
+  // ... (buyog'iga handleLoginSubmit va boshqa funksiyalar davom etib ketaveradi)
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
