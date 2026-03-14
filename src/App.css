@@ -497,3 +497,92 @@ body {
   padding-top: 16px;
   border-top: 2px dashed #dee2e6;
 }
+
+/* Faol (ishlatilgan) filtr tugmasi qorayib turadi */
+.filter-btn.active-filter {
+  background-color: #212529;
+  color: #ffffff;
+  border-color: #212529;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  color: #868e96;
+  font-size: 16px;
+}
+
+/* === FILTR PASTKI OYNASI (BOTTOM SHEET) === */
+.filter-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* Pastga taqab qo'yish */
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.filter-bottom-sheet {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 500px; /* Kompyuterda o'ta cho'zilib ketmasligi uchun */
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom)); /* iPhone larning pastki chizig'i uchun joy */
+  animation: slideUp 0.3s ease-out;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sheet-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.sheet-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #868e96;
+  cursor: pointer;
+}
+
+.sheet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sheet-option-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #495057;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Tanlangan variant dizayni */
+.sheet-option-btn.selected {
+  background-color: #e7f5ff; /* Ochiq ko'k */
+  border-color: #339af0;
+  color: #1864ab;
+  font-weight: 700;
+}
