@@ -58,7 +58,7 @@
   border: 1px solid #D1D5DB;
   border-radius: 10px;
   font-size: 15px;
-  background: #F9FAFB;
+  /*background: #F9FAFB;*/
   font-family: inherit;
   transition: all 0.2s;
 }
