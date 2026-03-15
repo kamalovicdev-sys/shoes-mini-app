@@ -4,7 +4,6 @@ import './Checkout.css';
 const WebApp = window.Telegram.WebApp;
 
 function Checkout({ cart, total, onBack, onComplete }) {
-  // Telegram profildagi ismni avtomatik olib kelishga harakat qilamiz
   const [formData, setFormData] = useState({
     name: WebApp?.initDataUnsafe?.user?.first_name || '',
     phone: '',
@@ -13,46 +12,49 @@ function Checkout({ cart, total, onBack, onComplete }) {
   });
 
   useEffect(() => {
-    // Telegram'ning asosiy tugmasini "Buyurtma berish" ga o'zgartiramiz
     WebApp.MainButton.setText(`BUYURTMANI TASDIQLASH - €${total}`);
     WebApp.MainButton.show();
     WebApp.BackButton.show();
 
     const handleMainButton = () => {
-      // Validatsiya: Majburiy maydonlar to'ldirilganligini tekshirish
+      // 1. Validatsiya: Bo'sh joylarni tekshirish
       if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim()) {
          if (WebApp.showAlert) WebApp.showAlert("Iltimos, ism, telefon raqam va manzilni to'liq kiriting!");
          else alert("Iltimos, ism, telefon raqam va manzilni to'liq kiriting!");
          return;
       }
 
-      // Botga jo'natiladigan tayyor obyekt
+      // 2. TUG'IRLANGAN QISM: Telegram limitiga tushmaslik uchun ortiqcha narsalarni (rasm, uzun ta'rif) qirqib tashlaymiz
+      const optimizedCart = cart.map(item => ({
+        name: item.name,
+        brand: item.brand,
+        price: item.price,
+        selectedSize: item.selectedSize
+      }));
+
       const orderData = {
         type: 'checkout_order',
         customer: formData,
-        items: cart,
+        items: optimizedCart, // Endi faqat qisqa ro'yxat ketadi
         totalPrice: total
       };
 
+      // 3. Botga jo'natish
       if (WebApp.initDataUnsafe?.user) {
-        // Bu buyruq oynani yopadi va ma'lumotni Telegram Botga matn ko'rinishida jo'natadi
         WebApp.sendData(JSON.stringify(orderData));
       } else {
-        // Brauzerda test qilish uchun
         alert("Buyurtma qabul qilindi!\n\n" + JSON.stringify(orderData, null, 2));
         onComplete();
       }
     };
 
     const handleBackButton = () => {
-      onBack(); // Orqaga (Savatga) qaytish
+      onBack();
     };
 
-    // Tugmalarga hodisalarni ulash
     WebApp.MainButton.onClick(handleMainButton);
     WebApp.BackButton.onClick(handleBackButton);
 
-    // Komponent yopilganda hodisalarni o'chirish
     return () => {
       WebApp.MainButton.offClick(handleMainButton);
       WebApp.BackButton.offClick(handleBackButton);
