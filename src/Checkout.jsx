@@ -15,9 +15,9 @@ function Checkout({ cart, total, onBack, onComplete }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    WebApp.MainButton.setText(`BUYURTMANI TASDIQLASH - ${total}`);
+    WebApp.MainButton.setText(`TASDIQLASH - ${total} so'm`);
     WebApp.MainButton.show();
-    WebApp.BackButton.show();
+    if (WebApp.isVersionAtLeast('6.1')) WebApp.BackButton.show();
 
     const handleMainButton = async () => {
       // Validatsiya
@@ -29,7 +29,7 @@ function Checkout({ cart, total, onBack, onComplete }) {
 
       if (isSubmitting) return;
       setIsSubmitting(true);
-      WebApp.MainButton.showProgress(); // Telegram tugmasida aylanuvchi loading chiqadi
+      WebApp.MainButton.showProgress();
 
       // Ortiqcha rasm va uzun ta'riflarni qirqib tashlaymiz
       const optimizedCart = cart.map(item => ({
@@ -39,14 +39,17 @@ function Checkout({ cart, total, onBack, onComplete }) {
         selectedSize: item.selectedSize
       }));
 
+      // === YANGI: Foydalanuvchining Telegram ID sini qo'shib yuboramiz ===
       const orderData = {
-        customer: formData,
+        customer: {
+          ...formData,
+          telegram_id: WebApp?.initDataUnsafe?.user?.id || null
+        },
         items: optimizedCart,
         totalPrice: total
       };
 
       try {
-        // TO'G'RIDAN-TO'G'RI SERVERGA YUBORAMIZ (Shunda oyna qotib qolmaydi)
         const response = await fetch(`${API_URL}/api/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -55,8 +58,8 @@ function Checkout({ cart, total, onBack, onComplete }) {
 
         if (response.ok) {
           if (WebApp.showAlert) {
-            WebApp.showAlert("✅ Buyurtmangiz muvaffaqiyatli qabul qilindi! Tez orada bog'lanamiz.", () => {
-              WebApp.close(); // Xabarni o'qigach dastur yopiladi
+            WebApp.showAlert("✅ Buyurtmangiz muvaffaqiyatli qabul qilindi! Telegram orqali xabar yuborildi.", () => {
+              WebApp.close();
             });
           } else {
             alert("✅ Buyurtmangiz qabul qilindi!");
@@ -80,11 +83,11 @@ function Checkout({ cart, total, onBack, onComplete }) {
     };
 
     WebApp.MainButton.onClick(handleMainButton);
-    WebApp.BackButton.onClick(handleBackButton);
+    if (WebApp.isVersionAtLeast('6.1')) WebApp.BackButton.onClick(handleBackButton);
 
     return () => {
       WebApp.MainButton.offClick(handleMainButton);
-      WebApp.BackButton.offClick(handleBackButton);
+      if (WebApp.isVersionAtLeast('6.1')) WebApp.BackButton.offClick(handleBackButton);
     };
   }, [formData, cart, total, onBack, onComplete, isSubmitting]);
 
@@ -129,7 +132,7 @@ function Checkout({ cart, total, onBack, onComplete }) {
                - {item.brand} {item.name} (O'lcham: {item.selectedSize})
             </p>
         ))}
-        <p className="total-price">Jami summa: {total}</p>
+        <p className="total-price">Jami summa: {total} so'm</p>
       </div>
     </div>
   );
