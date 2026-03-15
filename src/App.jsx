@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import './App.css'
+import Checkout from './Checkout' // YANGI KOMPONENTNI CHAQIRDIK
 
 const WebApp = window.Telegram.WebApp;
 const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
@@ -69,9 +70,12 @@ function App() {
 
   const [cart, setCart] = useState([]);
   const [detailsModal, setDetailsModal] = useState(null);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(null);
 
+  // Oynalarni boshqarish uchun state'lar
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false); // YANGI: Checkout oynasi state'i
+
+  const [selectedSize, setSelectedSize] = useState(null);
   const [activeFilter, setActiveFilter] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [sortOrder, setSortOrder] = useState("Default");
@@ -116,9 +120,13 @@ function App() {
     return total.toFixed(2);
   };
 
+  // 1. TUGMALAR MATNINI BOSHQARISH
   useEffect(() => {
+    // Agar checkout ochiq bo'lsa, Telegram tugmalarini Checkout.jsx o'zi boshqaradi
+    if (isCheckoutOpen) return;
+
     if (isCartOpen) {
-      WebApp.MainButton.setText(`CONFIRM ORDER - €${calculateTotal()}`);
+      WebApp.MainButton.setText(`CHECKOUT - €${calculateTotal()}`);
       WebApp.MainButton.show();
       WebApp.BackButton.show();
     } else if (cart.length > 0) {
@@ -129,18 +137,18 @@ function App() {
       WebApp.MainButton.hide();
       WebApp.BackButton.hide();
     }
-  }, [cart, isCartOpen]);
+  }, [cart, isCartOpen, isCheckoutOpen]);
 
+  // 2. TUGMALAR BOSILISHINI BOSHQARISH
   useEffect(() => {
+    // Agar checkout ochiq bo'lsa, bosilishlarni ham Checkout.jsx o'zi boshqaradi
+    if (isCheckoutOpen) return;
+
     const handleMainButtonClick = () => {
       if (isCartOpen) {
-        if (WebApp.initDataUnsafe?.user) {
-          WebApp.sendData(JSON.stringify({ type: 'order', items: cart, total: calculateTotal() }));
-        } else {
-          alert(`Buyurtma qabul qilindi!\nJami: €${calculateTotal()}`);
-        }
+        setIsCheckoutOpen(true); // Savatdan Checkout oynasiga o'tish
       } else if (cart.length > 0) {
-        setIsCartOpen(true);
+        setIsCartOpen(true); // Asosiy sahifadan Savatga o'tish
       }
     };
 
@@ -153,7 +161,7 @@ function App() {
       WebApp.MainButton.offClick(handleMainButtonClick);
       WebApp.BackButton.offClick(handleBackButtonClick);
     };
-  }, [isCartOpen, cart]);
+  }, [isCartOpen, cart, isCheckoutOpen]);
 
   const addToCart = (shoe, size, event) => {
     if (event) event.stopPropagation();
@@ -201,8 +209,9 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 1. ASOSIY SAHIFA */}
-      {!isCartOpen && (
+
+      {/* 1. ASOSIY SAHIFA (Savat va Checkout yopiq bo'lganda ko'rinadi) */}
+      {!isCartOpen && !isCheckoutOpen && (
         <>
           <div className="filters-scroll">
             <div className="filters-container">
@@ -234,7 +243,6 @@ function App() {
                 return (
                   <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
 
-                    {/* Rasm Slayderi */}
                     <ProductImageSlider
                       images={shoe.images}
                       name={shoe.name}
@@ -277,11 +285,11 @@ function App() {
       )}
 
       {/* 2. SAVAT SAHIFASI */}
-      {isCartOpen && (
+      {isCartOpen && !isCheckoutOpen && (
         <div className="cart-page">
           <div className="cart-header-row">
              <button className="back-btn-local" onClick={() => setIsCartOpen(false)}>← Orqaga</button>
-             <h2 className="cart-title">Your Cart</h2>
+             <h2 className="cart-title">Savat</h2>
           </div>
 
           <div className="cart-list">
@@ -291,7 +299,7 @@ function App() {
                 <div className="cart-item-info">
                   <p className="cart-item-brand">{item.brand}</p>
                   <p className="cart-item-name">{item.name}</p>
-                  <p className="cart-item-size">Size: {item.selectedSize}</p>
+                  <p className="cart-item-size">O'lcham: {item.selectedSize}</p>
                   <p className="cart-item-price">{item.price}</p>
                 </div>
                 <button className="remove-btn" onClick={() => removeFromCart(index)}>
@@ -304,21 +312,31 @@ function App() {
             ))}
           </div>
           <div className="cart-total-box">
-            <span>Total:</span>
+            <span>Jami:</span>
             <span>€{calculateTotal()}</span>
           </div>
 
-          <button className="floating-cart-btn confirm-btn" onClick={() => {
-            alert(`Buyurtma qabul qilindi!\nJami: €${calculateTotal()}`);
-            setCart([]);
-            setIsCartOpen(false);
-          }}>
-            CONFIRM ORDER - €{calculateTotal()}
+          <button className="floating-cart-btn confirm-btn" onClick={() => setIsCheckoutOpen(true)}>
+            CHECKOUT - €{calculateTotal()}
           </button>
         </div>
       )}
 
-      {/* 3. MODAL OYNA */}
+      {/* 3. YANGI: BUYURTMANI RASMIYLASHTIRISH SAHIFASI */}
+      {isCheckoutOpen && (
+        <Checkout
+          cart={cart}
+          total={calculateTotal()}
+          onBack={() => setIsCheckoutOpen(false)} // Orqaga qaytish
+          onComplete={() => { // Muvaffaqiyatli tugatilganda
+            setCart([]);
+            setIsCheckoutOpen(false);
+            setIsCartOpen(false);
+          }}
+        />
+      )}
+
+      {/* 4. MODAL OYNA (Mahsulot haqida ma'lumot) */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -380,7 +398,7 @@ function App() {
         </div>
       )}
 
-      {/* 4. FILTR OYNASI */}
+      {/* 5. FILTR OYNASI */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
