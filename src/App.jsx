@@ -10,7 +10,7 @@ const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
 // Brendlar logotiplari ro'yxati
 const BRAND_LOGOS = [
   { name: 'Nike', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg' },
-  { name: 'New Balance', logo: 'https://logolook.net/new-balance-logo' },
+  { name: 'New Balance', logo: 'https://logolook.net/wp-content/uploads/2023/04/New-Balance-Emblem.png' },
   { name: 'Adidas', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg' },
   { name: 'Puma', logo: 'https://logoeps.com/wp-content/uploads/2013/04/puma-se-eps-vector-logo.png' },
   { name: 'Jordan', logo: 'https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg' }
