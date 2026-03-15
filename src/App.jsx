@@ -4,9 +4,20 @@ import Checkout from './Checkout'
 
 const WebApp = window.Telegram.WebApp;
 
-// 1. FILTRLAR VA SARALASH O'ZBEK TILIGA O'GIRILDI
 const FILTERS = ["Saralash", "Brend", "O'lcham", "Rang"];
 const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
+
+// YANGI: Brendlar logotiplari ro'yxati (Internetdan avtomatik yuklanadi)
+const BRAND_LOGOS = [
+  { name: 'Nike', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg' },
+  { name: 'New Balance', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/New_Balance_logo.svg' },
+  { name: 'Adidas', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg' },
+  { name: 'Puma', logo: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Puma_Logo.svg' },
+  { name: 'Jordan', logo: 'https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg' }
+];
+
+// YANGI: Asosiy menyu bo'limlari
+const MENU_TABS = ["Barchasi", "Eng ko'p sotilganlar", "Yangi mahsulotlar"];
 
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
@@ -77,8 +88,12 @@ function App() {
 
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeFilter, setActiveFilter] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState("Barchasi"); // "All" -> "Barchasi"
+
+  const [selectedBrand, setSelectedBrand] = useState("Barchasi");
   const [sortOrder, setSortOrder] = useState("Standart");
+
+  // YANGI: Menyu qatori uchun State
+  const [selectedMenuTab, setSelectedMenuTab] = useState("Barchasi");
 
   useEffect(() => {
     fetch(`${API_URL}/api/products`)
@@ -111,15 +126,12 @@ function App() {
     }
   }, [detailsModal]);
 
-  // 2. SO'M FORMATIGA O'TKAZISH VA HISOBLASH
   const calculateTotal = () => {
     const total = cart.reduce((sum, item) => {
       const priceStr = String(item.price);
-      // Faqat raqamlarni ajratib olamiz (so'm dagi bo'sh joylar va harflarni olib tashlaydi)
       const numericPrice = parseFloat(priceStr.replace(/[^\d]/g, ''));
       return isNaN(numericPrice) ? sum : sum + numericPrice;
     }, 0);
-    // Masalan: 1500000 ni "1 500 000" shakliga keltiradi
     return total.toLocaleString('ru-RU');
   };
 
@@ -183,19 +195,34 @@ function App() {
     if (cart.length === 1) setIsCartOpen(false);
   };
 
+  // === MAHSULOTLARNI SARALASH VA FILTRLASH ===
   const displayedShoes = useMemo(() => {
     let result = [...SHOES];
+
+    // 1. Brend bo'yicha filtr (Slayderdan tanlangan)
     if (selectedBrand !== "Barchasi") {
-      result = result.filter(shoe => shoe.brand === selectedBrand);
+      result = result.filter(shoe => shoe.brand.toLowerCase() === selectedBrand.toLowerCase());
     }
+
+    // 2. Menyu tab bo'yicha saralash
+    if (selectedMenuTab === "Yangi mahsulotlar") {
+      result.sort((a, b) => b.id - a.id); // Eng yangilari birinchi
+    } else if (selectedMenuTab === "Eng ko'p sotilganlar") {
+      // Mock: Chegirmadagi mahsulotlarni yoki shunchaki teskari ro'yxatni sotilganlar deymiz
+      const deals = result.filter(s => s.isDeal);
+      result = deals.length > 0 ? deals : result.slice().reverse();
+    }
+
+    // 3. Narx bo'yicha saralash
     const priceReplace = (price) => parseFloat(String(price).replace(/[^\d]/g, ''));
     if (sortOrder === "Arzondan qimmatga") {
       result.sort((a, b) => priceReplace(a.price) - priceReplace(b.price));
     } else if (sortOrder === "Qimmatdan arzonga") {
       result.sort((a, b) => priceReplace(b.price) - priceReplace(a.price));
     }
+
     return result;
-  }, [SHOES, selectedBrand, sortOrder]);
+  }, [SHOES, selectedBrand, selectedMenuTab, sortOrder]);
 
   const handleFilterClick = (filterName) => {
     if (filterName === "Brend" || filterName === "Saralash") {
@@ -212,6 +239,7 @@ function App() {
       {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && !isCheckoutOpen && (
         <>
+          {/* Tepadagi mayda filtrlar */}
           <div className="filters-scroll">
             <div className="filters-container">
               {FILTERS.map((filter, index) => {
@@ -233,6 +261,49 @@ function App() {
             </div>
           </div>
 
+          {/* === YANGI: BRENDLAR SLAYDERI === */}
+          <div className="brands-section">
+            <div className="brands-header">
+              <h3>Brendlar</h3>
+              <button
+                className="brands-all-btn"
+                onClick={() => setSelectedBrand("Barchasi")}
+              >
+                Barchasi
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+
+            <div className="brands-list">
+              {BRAND_LOGOS.map((brand, index) => (
+                <div
+                  key={index}
+                  className={`brand-card-wrapper ${selectedBrand.toLowerCase() === brand.name.toLowerCase() ? 'active' : ''}`}
+                  onClick={() => setSelectedBrand(brand.name)}
+                >
+                  <div className="brand-icon-box">
+                    <img src={brand.logo} alt={brand.name} />
+                  </div>
+                  <span className="brand-name">{brand.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* === YANGI: ASOSIY MENYU TABLAR === */}
+          <div className="main-menu-tabs">
+             {MENU_TABS.map((tab) => (
+               <button
+                 key={tab}
+                 className={`menu-tab-btn ${selectedMenuTab === tab ? 'active' : ''}`}
+                 onClick={() => setSelectedMenuTab(tab)}
+               >
+                 {tab}
+               </button>
+             ))}
+          </div>
+
+          {/* Mahsulotlar Ro'yxati */}
           <div className="shoes-grid">
             {isLoading ? (
               <div className="empty-state">Ma'lumotlar yuklanmoqda...</div>
@@ -254,7 +325,6 @@ function App() {
                       <div className="brand">{shoe.brand}</div>
                       <div className="name">{shoe.name}</div>
                       <div className="price-section">
-                        {/* Narxni orqasiga so'm yozuvi qo'shildi (Agar bazaga raqamni o'zini yozgan bo'lsangiz) */}
                         <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
                       </div>
                     </div>
@@ -272,7 +342,7 @@ function App() {
                 );
               })
             ) : (
-              <div className="empty-state">Hozircha mahsulot qo'shilmagan</div>
+              <div className="empty-state">Hozircha mahsulot topilmadi</div>
             )}
           </div>
 
