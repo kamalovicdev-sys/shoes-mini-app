@@ -4,10 +4,11 @@ import Checkout from './Checkout';
 
 const WebApp = window.Telegram.WebApp;
 
-// 1. "Rang" olib tashlandi, faqat kerakli filtrlar qoldi
+// "Rang" olib tashlandi, faqat kerakli filtrlar qoldi
 const FILTERS = ["Saralash", "Brend", "O'lcham"];
 const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
 
+// Brendlar logotiplari ro'yxati
 const BRAND_LOGOS = [
   { name: 'Nike', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg' },
   { name: 'New Balance', logo: 'https://logolook.net/wp-content/uploads/2023/04/New-Balance-Emblem.png' },
@@ -16,7 +17,7 @@ const BRAND_LOGOS = [
   { name: 'Jordan', logo: 'https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg' }
 ];
 
-
+// Backend API Manzili
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 // === RASM SLAYDERI KOMPONENTI ===
@@ -94,7 +95,7 @@ function App() {
   // === FILTRLAR UCHUN STATE ===
   const [selectedBrand, setSelectedBrand] = useState("Barchasi");
   const [sortOrder, setSortOrder] = useState("Standart");
-  const [selectedSizeFilter, setSelectedSizeFilter] = useState("Barchasi"); // YANGI: O'lcham filtri
+  const [selectedSizeFilter, setSelectedSizeFilter] = useState("Barchasi"); // O'lcham filtri
 
   useEffect(() => {
     fetch(`${API_URL}/api/products`)
@@ -115,7 +116,7 @@ function App() {
     return ["Barchasi", ...Array.from(uniqueBrands).filter(b => b !== "")];
   }, [SHOES]);
 
-  // YANGI: Bor o'lchamlarni bazadan yig'ib, o'sish tartibida taxlash
+  // Bor o'lchamlarni bazadan yig'ib, o'sish tartibida taxlash
   const SIZES = useMemo(() => {
     const allSizes = new Set();
     SHOES.forEach(shoe => {
@@ -141,15 +142,18 @@ function App() {
     }
   }, [detailsModal]);
 
+  // Jami summani hisoblash (Faqat raqamlarni ajratib)
   const calculateTotal = () => {
     const total = cart.reduce((sum, item) => {
       const priceStr = String(item.price);
       const numericPrice = parseFloat(priceStr.replace(/[^\d]/g, ''));
       return isNaN(numericPrice) ? sum : sum + numericPrice;
     }, 0);
+    // Formatlash (masalan: 1 500 000)
     return total.toLocaleString('ru-RU');
   };
 
+  // Telegram pastki tugmasini boshqarish
   useEffect(() => {
     if (isCheckoutOpen) return;
 
@@ -167,6 +171,7 @@ function App() {
     }
   }, [cart, isCartOpen, isCheckoutOpen]);
 
+  // Telegram pastki tugmasi bosilganda
   useEffect(() => {
     if (isCheckoutOpen) return;
 
@@ -191,6 +196,7 @@ function App() {
     };
   }, [isCartOpen, cart, isCheckoutOpen]);
 
+  // Savatga qo'shish
   const addToCart = (shoe, size, event) => {
     if (event) {
       event.stopPropagation();
@@ -210,6 +216,7 @@ function App() {
     }
   };
 
+  // Savatdan o'chirish
   const removeFromCart = (indexToRemove) => {
     setCart(cart.filter((_, index) => index !== indexToRemove));
     if (WebApp.HapticFeedback) {
@@ -224,14 +231,14 @@ function App() {
   const { bestSellers, newArrivals } = useMemo(() => {
     let result = [...SHOES];
 
-    // 1. Brend bo'yicha filtr
+    // 1. Brend bo'yicha filtr (Tozalangan holda)
     if (selectedBrand !== "Barchasi") {
       result = result.filter(shoe =>
         shoe.brand && shoe.brand.trim().toLowerCase() === selectedBrand.trim().toLowerCase()
       );
     }
 
-    // YANGI: 2. O'lcham bo'yicha filtr (Agar barchasi bo'lmasa)
+    // 2. O'lcham bo'yicha filtr
     if (selectedSizeFilter !== "Barchasi") {
       result = result.filter(shoe => shoe.sizes && shoe.sizes.includes(Number(selectedSizeFilter)));
     }
@@ -254,7 +261,7 @@ function App() {
     return { bestSellers: bests, newArrivals: news };
   }, [SHOES, selectedBrand, sortOrder, selectedSizeFilter]);
 
-  // YANGILANDI: O'lcham tugmasi ham ishlashi uchun
+  // Filtr tugmasi bosilganda
   const handleFilterClick = (filterName) => {
     if (filterName === "Brend" || filterName === "Saralash" || filterName === "O'lcham") {
       setActiveFilter(filterName);
@@ -270,16 +277,17 @@ function App() {
   return (
     <div className="app-container">
 
-      {/* 1. ASOSIY SAHIFA */}
+      {/* 1. ASOSIY SAHIFA (Savat va Checkout yopiq)  */}
       {!isCartOpen && !isCheckoutOpen && (
         <>
+          {/* Yuqori mayda filtrlar */}
           <div className="filters-scroll">
             <div className="filters-container">
               {FILTERS.map((filter, index) => {
                 // Filtr aktivligini tekshirish
                 const isActive = (filter === "Brend" && selectedBrand !== "Barchasi") ||
                                  (filter === "Saralash" && sortOrder !== "Standart") ||
-                                 (filter === "O'lcham" && selectedSizeFilter !== "Barchasi"); // YANGI
+                                 (filter === "O'lcham" && selectedSizeFilter !== "Barchasi");
 
                 // Tugmada nima yozuv chiqishi
                 const buttonText = filter === "Brend" && selectedBrand !== "Barchasi" ? selectedBrand :
@@ -301,6 +309,7 @@ function App() {
             </div>
           </div>
 
+          {/* === BRENDLAR SLAYDERI === */}
           <div className="brands-section">
             <div className="brands-header">
               <h3>Brendlar</h3>
@@ -332,6 +341,7 @@ function App() {
             <div className="empty-state">Ma'lumotlar yuklanmoqda...</div>
           ) : (bestSellers.length > 0 || newArrivals.length > 0) ? (
             <>
+              {/* === QISM 1: ENG KO'P SOTILGANLAR === */}
               {bestSellers.length > 0 && (
                 <>
                   <div className="section-header">
@@ -344,6 +354,7 @@ function App() {
                     </button>
                   </div>
 
+                  {/* Gorizontal yonga suriladigan ro'yxat */}
                   <div className="horizontal-shoes-list">
                     {bestSellers.map((shoe) => {
                       const isInCart = cart.some(item => item.id === shoe.id);
@@ -358,8 +369,20 @@ function App() {
                           <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                             <div className="brand">{shoe.brand}</div>
                             <div className="name">{shoe.name}</div>
+
+                            {/* === YANGILANDI: Narxlar qatori === */}
                             <div className="price-section">
-                              <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
+                              {shoe.isDeal ? (
+                                <>
+                                  {/* Eski narx, formatlangan */}
+                                  <span className="old-price">{parseFloat(shoe.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
+                                  {/* Yangi narx, formatlangan, qizil */}
+                                  <span className="price deal-price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                </>
+                              ) : (
+                                /* Oddiy narx */
+                                <span className="price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                              )}
                             </div>
                           </div>
                           <div className="card-actions">
@@ -378,6 +401,7 @@ function App() {
                 </>
               )}
 
+              {/* === QISM 2: YANGI MAHSULOTLAR === */}
               {newArrivals.length > 0 && (
                 <>
                   <div className="section-header">
@@ -390,6 +414,7 @@ function App() {
                     </button>
                   </div>
 
+                  {/* Pastga qarab ketadigan 2 qatorlik ro'yxat */}
                   <div className="shoes-grid">
                     {newArrivals.map((shoe) => {
                       const isInCart = cart.some(item => item.id === shoe.id);
@@ -404,8 +429,17 @@ function App() {
                           <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                             <div className="brand">{shoe.brand}</div>
                             <div className="name">{shoe.name}</div>
+
+                            {/* === YANGILANDI: Narxlar qatori (Bir xil mantiq) === */}
                             <div className="price-section">
-                              <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
+                              {shoe.isDeal ? (
+                                <>
+                                  <span className="old-price">{parseFloat(shoe.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
+                                  <span className="price deal-price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                </>
+                              ) : (
+                                <span className="price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                              )}
                             </div>
                           </div>
                           <div className="card-actions">
@@ -505,10 +539,20 @@ function App() {
             <div className="modal-body">
               <h2 className="modal-brand">{detailsModal.brand}</h2>
               <p className="modal-name">{detailsModal.name}</p>
+
+              {/* === YANGILANDI: Modal ichidagi narxlar === */}
               <div className="modal-price-box">
-                <span className="modal-price">{detailsModal.price}</span>
-                {detailsModal.isDeal && <span className="modal-discount">{detailsModal.discount} CHEGIRMA</span>}
+                {detailsModal.isDeal ? (
+                  <>
+                    <span className="modal-old-price">{parseFloat(detailsModal.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
+                    <span className="modal-price deal-price">{parseFloat(detailsModal.price).toLocaleString('ru-RU')} so'm</span>
+                    <span className="modal-discount">{detailsModal.discount} CHEGIRMA</span>
+                  </>
+                ) : (
+                  <span className="modal-price">{parseFloat(detailsModal.price).toLocaleString('ru-RU')} so'm</span>
+                )}
               </div>
+
               <div className="modal-divider"></div>
 
               <div className="modal-sizes">
@@ -574,7 +618,7 @@ function App() {
                   {option}
                 </button>
               ))}
-              {/* YANGI: O'lcham Filtr */}
+              {/* O'lcham Filtr */}
               {activeFilter === "O'lcham" && SIZES.map(size => (
                 <button
                   key={size}

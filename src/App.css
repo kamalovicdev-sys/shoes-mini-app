@@ -70,6 +70,14 @@ html, body {
   border-color: #111827;
 }
 
+.chevron-icon {
+  transition: transform 0.2s;
+}
+
+.filter-btn:active .chevron-icon {
+  transform: translateY(1px);
+}
+
 /* === 3. BRENDLAR SLAYDERI === */
 .brands-section {
   padding: 16px 0 8px 0;
@@ -312,20 +320,32 @@ html, body {
   overflow: hidden;
 }
 
+/* === YANGILANDI: Narxlar qatori === */
 .price-section {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: baseline; /* Pastki chizig'i bo'yicha taxlash */
+  gap: 8px; /* Narxlar orasidagi joy */
+  flex-wrap: wrap; /* Sig'masa pastga tushadi */
 }
 
+/* Yangi (Chegirma) narx */
 .price {
   font-size: 15px;
   font-weight: 700;
   color: #111827;
 }
 
+/* Agar chegirma bo'lsa qizil rangda */
 .deal-price {
   color: #EF4444;
+}
+
+/* === YANGI KLASS: Eski narx (ustiga chizilgan) === */
+.old-price {
+  font-size: 13px;
+  color: #9CA3AF; /* Kulrang */
+  text-decoration: line-through; /* Ustiga chizish */
+  font-weight: 500;
 }
 
 .card-actions {
@@ -343,6 +363,10 @@ html, body {
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s;
+}
+
+.add-to-cart-btn:active {
+  transform: scale(0.96);
 }
 
 .add-to-cart-btn:disabled {
@@ -440,7 +464,11 @@ html, body {
   box-shadow: 0 8px 24px rgba(17,24,39,0.25);
   z-index: 20;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: 0.2s;
+}
+
+.floating-cart-btn:active {
+  transform: translateX(-50%) scale(0.97);
 }
 
 .floating-cart-btn:hover {
@@ -530,6 +558,10 @@ html, body {
   transition: 0.2s;
 }
 
+.remove-btn:active {
+  transform: scale(0.9);
+}
+
 .remove-btn:hover { background: #FEE2E2; }
 
 .cart-total-box {
@@ -597,21 +629,48 @@ html, body {
   z-index: 10;
 }
 
+.close-btn:active {
+  transform: scale(0.9);
+}
+
 .modal-body { padding-top: 10px; }
 .modal-brand { font-size: 14px; color: #6B7280; font-weight: 600; margin-bottom: 4px; margin-top:0; text-transform: uppercase;}
 .modal-name { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 12px; margin-top:0; line-height: 1.3;}
-.modal-price-box { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-.modal-price { font-size: 26px; font-weight: 700; color: #111827; }
+
+/* === YANGILANDI: Modal narxlari === */
+.modal-price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap; /* Mobil ekranda ko'p narx sig'ishi uchun */
+}
+
+.modal-price {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Modal ichidagi eski narx */
+.modal-old-price {
+  font-size: 18px;
+  color: #9CA3AF;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
 .modal-discount { background: #FEF2F2; color: #EF4444; padding: 6px 10px; border-radius: 8px; font-size: 14px; font-weight: 700; }
 .modal-divider { height: 1px; background: #E5E7EB; margin: 24px 0; }
 
 .sizes-title { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 12px; }
 .sizes-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
 .size-btn { padding: 12px 18px; border: 1px solid #D1D5DB; background: #FFFFFF; border-radius: 12px; font-size: 15px; font-weight: 600; color: #374151; cursor: pointer; transition: 0.2s; }
+.size-btn:active { transform: scale(0.95); }
 .size-btn.selected { background: #111827; color: #FFFFFF; border-color: #111827; }
 
 .modal-description { font-size: 15px; line-height: 1.6; color: #6B7280; margin-bottom: 30px; }
-.add-to-cart-btn.large { padding: 18px; font-size: 16px; border-radius: 16px; width: 100%;}
+.add-to-cart-btn.large { padding: 18px; font-size: 16px; border-radius: 166px; width: 100%;}
 
 /* Filtr Bottom Sheet */
 .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
@@ -619,6 +678,7 @@ html, body {
 .sheet-close { background: #F3F4F6; border: none; width: 36px; height: 36px; border-radius: 18px; font-size: 16px; cursor: pointer; color: #374151; }
 .sheet-options { display: flex; flex-direction: column; gap: 12px; }
 .sheet-option-btn { padding: 16px; text-align: left; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 14px; font-size: 16px; font-weight: 600; color: #374151; cursor: pointer; transition: 0.2s;}
+.sheet-option-btn:active { transform: scale(0.98); background: #F3F4F6; }
 .sheet-option-btn.selected { background: #111827; color: #FFFFFF; border-color: #111827; }
 
 /* Empty State */
