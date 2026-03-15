@@ -97,7 +97,9 @@ function App() {
   }, []);
 
   const BRANDS = useMemo(() => {
-    return ["Barchasi", ...new Set(SHOES.map(shoe => shoe.brand))];
+    // Bazadagi brend nomlarini bo'sh joylarsiz tozalab yig'ib olamiz
+    const uniqueBrands = new Set(SHOES.map(shoe => shoe.brand ? shoe.brand.trim() : ""));
+    return ["Barchasi", ...Array.from(uniqueBrands).filter(b => b !== "")];
   }, [SHOES]);
 
   useEffect(() => {
@@ -181,8 +183,11 @@ function App() {
   const { bestSellers, newArrivals } = useMemo(() => {
     let result = [...SHOES];
 
+    // 1. Umumiy filtrlar (Brend bo'yicha qat'iy qidiruv)
     if (selectedBrand !== "Barchasi") {
-      result = result.filter(shoe => shoe.brand.toLowerCase() === selectedBrand.toLowerCase());
+      result = result.filter(shoe =>
+        shoe.brand && shoe.brand.trim().toLowerCase() === selectedBrand.trim().toLowerCase()
+      );
     }
 
     const priceReplace = (price) => parseFloat(String(price).replace(/[^\d]/g, ''));
@@ -192,8 +197,11 @@ function App() {
       result.sort((a, b) => priceReplace(b.price) - priceReplace(a.price));
     }
 
+    // 2. Eng ko'p sotilganlar
     const deals = result.filter(s => s.isDeal);
     const bests = deals.length > 0 ? deals : result.slice(0, 5);
+
+    // 3. Yangi mahsulotlar
     const news = [...result].sort((a, b) => b.id - a.id);
 
     return { bestSellers: bests, newArrivals: news };
