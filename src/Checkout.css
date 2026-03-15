@@ -59,6 +59,7 @@
   border-radius: 10px;
   font-size: 15px;
   background: #F9FAFB;
+  color: #111827;
   font-family: inherit;
   transition: all 0.2s;
 }
@@ -67,7 +68,7 @@
 .checkout-form textarea:focus {
   outline: none;
   border-color: #111827;
-  /*background: #fff;*/
+  background: #fff;
   box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
 }
 
