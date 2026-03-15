@@ -16,6 +16,7 @@ const BRAND_LOGOS = [
   { name: 'Jordan', logo: 'https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg' }
 ];
 
+
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 // === RASM SLAYDERI KOMPONENTI ===
