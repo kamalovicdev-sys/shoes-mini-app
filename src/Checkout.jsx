@@ -15,7 +15,7 @@ function Checkout({ cart, total, onBack, onComplete }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    WebApp.MainButton.setText(`BUYURTMANI TASDIQLASH - €${total}`);
+    WebApp.MainButton.setText(`BUYURTMANI TASDIQLASH - ${total}`);
     WebApp.MainButton.show();
     WebApp.BackButton.show();
 
@@ -129,7 +129,7 @@ function Checkout({ cart, total, onBack, onComplete }) {
                - {item.brand} {item.name} (O'lcham: {item.selectedSize})
             </p>
         ))}
-        <p className="total-price">Jami summa: €{total}</p>
+        <p className="total-price">Jami summa: {total}</p>
       </div>
     </div>
   );
