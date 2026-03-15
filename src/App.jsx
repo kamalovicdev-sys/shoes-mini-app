@@ -4,11 +4,9 @@ import Checkout from './Checkout';
 
 const WebApp = window.Telegram.WebApp;
 
-// "Rang" olib tashlandi, faqat kerakli filtrlar qoldi
 const FILTERS = ["Saralash", "Brend", "O'lcham"];
 const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
 
-// Brendlar logotiplari ro'yxati
 const BRAND_LOGOS = [
   { name: 'Nike', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg' },
   { name: 'New Balance', logo: 'https://logolook.net/wp-content/uploads/2023/04/New-Balance-Emblem.png' },
@@ -17,7 +15,6 @@ const BRAND_LOGOS = [
   { name: 'Jordan', logo: 'https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg' }
 ];
 
-// Backend API Manzili
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 // === RASM SLAYDERI KOMPONENTI ===
@@ -92,16 +89,38 @@ function App() {
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeFilter, setActiveFilter] = useState(null);
 
-  // === FILTRLAR UCHUN STATE ===
   const [selectedBrand, setSelectedBrand] = useState("Barchasi");
   const [sortOrder, setSortOrder] = useState("Standart");
-  const [selectedSizeFilter, setSelectedSizeFilter] = useState("Barchasi"); // O'lcham filtri
+  const [selectedSizeFilter, setSelectedSizeFilter] = useState("Barchasi");
 
   useEffect(() => {
     fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
-        setSHOES(data);
+
+        // === YANGI: AVTOMATIK HISOBLASH MANTIQI ===
+        const processedShoes = data.map(shoe => {
+          // Bazadagi ma'lumotlarni toza raqamga aylantiramiz
+          let originalPrice = parseFloat(String(shoe.price).replace(/[^\d]/g, '')) || 0;
+          let oldP = parseFloat(String(shoe.oldPrice).replace(/[^\d]/g, '')) || 0;
+          let disc = parseFloat(String(shoe.discount).replace(/[^\d]/g, '')) || 0;
+
+          let finalPrice = originalPrice;
+
+          // Agar chegirma belgilangan bo'lsa, matematik formula ishga tushadi:
+          if (shoe.isDeal && oldP > 0 && disc > 0) {
+            finalPrice = oldP - (oldP * (disc / 100));
+          }
+
+          return {
+            ...shoe,
+            price: finalPrice, // Asosiy narxni o'zimiz hisoblagan aniq narxga almashtiramiz
+            oldPriceNum: oldP,
+            discountNum: disc
+          };
+        });
+
+        setSHOES(processedShoes);
         setIsLoading(false);
       })
       .catch(err => {
@@ -110,13 +129,11 @@ function App() {
       });
   }, []);
 
-  // Bor brendlarni aniqlash
   const BRANDS = useMemo(() => {
     const uniqueBrands = new Set(SHOES.map(shoe => shoe.brand ? shoe.brand.trim() : ""));
     return ["Barchasi", ...Array.from(uniqueBrands).filter(b => b !== "")];
   }, [SHOES]);
 
-  // Bor o'lchamlarni bazadan yig'ib, o'sish tartibida taxlash
   const SIZES = useMemo(() => {
     const allSizes = new Set();
     SHOES.forEach(shoe => {
@@ -124,7 +141,6 @@ function App() {
         shoe.sizes.forEach(size => allSizes.add(size));
       }
     });
-    // Razmerlarni raqam bo'yicha o'sish tartibida joylaymiz (masalan: 39, 40, 41)
     return ["Barchasi", ...Array.from(allSizes).sort((a, b) => a - b)];
   }, [SHOES]);
 
@@ -137,23 +153,15 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (detailsModal) {
-      setSelectedSize(null);
-    }
+    if (detailsModal) setSelectedSize(null);
   }, [detailsModal]);
 
-  // Jami summani hisoblash (Faqat raqamlarni ajratib)
+  // Jami summani hisoblash (Endi raqamlarni tozalash shart emas, chunki tepada raqam qilib oldik)
   const calculateTotal = () => {
-    const total = cart.reduce((sum, item) => {
-      const priceStr = String(item.price);
-      const numericPrice = parseFloat(priceStr.replace(/[^\d]/g, ''));
-      return isNaN(numericPrice) ? sum : sum + numericPrice;
-    }, 0);
-    // Formatlash (masalan: 1 500 000)
+    const total = cart.reduce((sum, item) => sum + item.price, 0);
     return total.toLocaleString('ru-RU');
   };
 
-  // Telegram pastki tugmasini boshqarish
   useEffect(() => {
     if (isCheckoutOpen) return;
 
@@ -171,22 +179,13 @@ function App() {
     }
   }, [cart, isCartOpen, isCheckoutOpen]);
 
-  // Telegram pastki tugmasi bosilganda
   useEffect(() => {
     if (isCheckoutOpen) return;
-
     const handleMainButtonClick = () => {
-      if (isCartOpen) {
-        setIsCheckoutOpen(true);
-      } else if (cart.length > 0) {
-        setIsCartOpen(true);
-      }
+      if (isCartOpen) setIsCheckoutOpen(true);
+      else if (cart.length > 0) setIsCartOpen(true);
     };
-
-    const handleBackButtonClick = () => {
-      setIsCartOpen(false);
-    };
-
+    const handleBackButtonClick = () => setIsCartOpen(false);
     WebApp.MainButton.onClick(handleMainButtonClick);
     WebApp.BackButton.onClick(handleBackButtonClick);
 
@@ -196,141 +195,96 @@ function App() {
     };
   }, [isCartOpen, cart, isCheckoutOpen]);
 
-  // Savatga qo'shish
   const addToCart = (shoe, size, event) => {
-    if (event) {
-      event.stopPropagation();
-    }
+    if (event) event.stopPropagation();
     const sizeToAdd = size || shoe.sizes[0];
 
     if (!cart.some(item => item.id === shoe.id && item.selectedSize === sizeToAdd)) {
       setCart([...cart, {
-        ...shoe,
-        selectedSize: sizeToAdd,
-        cartItemId: Date.now(),
+        ...shoe, selectedSize: sizeToAdd, cartItemId: Date.now(),
         cartItemImage: shoe.images && shoe.images.length > 0 ? shoe.images[0] : ''
       }]);
-      if (WebApp.HapticFeedback) {
-        WebApp.HapticFeedback.impactOccurred('light');
-      }
+      if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('light');
     }
   };
 
-  // Savatdan o'chirish
   const removeFromCart = (indexToRemove) => {
     setCart(cart.filter((_, index) => index !== indexToRemove));
-    if (WebApp.HapticFeedback) {
-      WebApp.HapticFeedback.impactOccurred('medium');
-    }
-    if (cart.length === 1) {
-      setIsCartOpen(false);
-    }
+    if (WebApp.HapticFeedback) WebApp.HapticFeedback.impactOccurred('medium');
+    if (cart.length === 1) setIsCartOpen(false);
   };
 
-  // === MAHSULOTLARNI 2 TA RO'YXATGA BO'LISH VA SARALASH ===
   const { bestSellers, newArrivals } = useMemo(() => {
     let result = [...SHOES];
 
-    // 1. Brend bo'yicha filtr (Tozalangan holda)
     if (selectedBrand !== "Barchasi") {
-      result = result.filter(shoe =>
-        shoe.brand && shoe.brand.trim().toLowerCase() === selectedBrand.trim().toLowerCase()
-      );
+      result = result.filter(shoe => shoe.brand && shoe.brand.trim().toLowerCase() === selectedBrand.trim().toLowerCase());
     }
 
-    // 2. O'lcham bo'yicha filtr
     if (selectedSizeFilter !== "Barchasi") {
       result = result.filter(shoe => shoe.sizes && shoe.sizes.includes(Number(selectedSizeFilter)));
     }
 
-    // 3. Narx bo'yicha saralash
-    const priceReplace = (price) => parseFloat(String(price).replace(/[^\d]/g, ''));
+    // Narx bo'yicha saralash (Endi to'g'ridan to'g'ri .price ishlatiladi)
     if (sortOrder === "Arzondan qimmatga") {
-      result.sort((a, b) => priceReplace(a.price) - priceReplace(b.price));
+      result.sort((a, b) => a.price - b.price);
     } else if (sortOrder === "Qimmatdan arzonga") {
-      result.sort((a, b) => priceReplace(b.price) - priceReplace(a.price));
+      result.sort((a, b) => b.price - a.price);
     }
 
-    // Eng ko'p sotilganlar (Chegirmasi borlar)
     const deals = result.filter(s => s.isDeal);
     const bests = deals.length > 0 ? deals : result.slice(0, 5);
-
-    // Yangi mahsulotlar (Eng oxirgi qo'shilganlar)
     const news = [...result].sort((a, b) => b.id - a.id);
 
     return { bestSellers: bests, newArrivals: news };
   }, [SHOES, selectedBrand, sortOrder, selectedSizeFilter]);
 
-  // Filtr tugmasi bosilganda
   const handleFilterClick = (filterName) => {
     if (filterName === "Brend" || filterName === "Saralash" || filterName === "O'lcham") {
       setActiveFilter(filterName);
     } else {
-      if(WebApp.showAlert) {
-        WebApp.showAlert("Bu filtr tez orada ishga tushadi!");
-      } else {
-        alert("Bu filtr tez orada ishga tushadi!");
-      }
+      if(WebApp.showAlert) WebApp.showAlert("Bu filtr tez orada ishga tushadi!");
+      else alert("Bu filtr tez orada ishga tushadi!");
     }
   };
 
   return (
     <div className="app-container">
 
-      {/* 1. ASOSIY SAHIFA (Savat va Checkout yopiq)  */}
+      {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && !isCheckoutOpen && (
         <>
-          {/* Yuqori mayda filtrlar */}
           <div className="filters-scroll">
             <div className="filters-container">
               {FILTERS.map((filter, index) => {
-                // Filtr aktivligini tekshirish
                 const isActive = (filter === "Brend" && selectedBrand !== "Barchasi") ||
                                  (filter === "Saralash" && sortOrder !== "Standart") ||
                                  (filter === "O'lcham" && selectedSizeFilter !== "Barchasi");
 
-                // Tugmada nima yozuv chiqishi
                 const buttonText = filter === "Brend" && selectedBrand !== "Barchasi" ? selectedBrand :
                                    filter === "O'lcham" && selectedSizeFilter !== "Barchasi" ? selectedSizeFilter : filter;
 
                 return (
-                  <button
-                    key={index}
-                    className={`filter-btn ${isActive ? 'active-filter' : ''}`}
-                    onClick={() => handleFilterClick(filter)}
-                  >
+                  <button key={index} className={`filter-btn ${isActive ? 'active-filter' : ''}`} onClick={() => handleFilterClick(filter)} >
                     {buttonText}
-                    <svg className="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    <svg className="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {/* === BRENDLAR SLAYDERI === */}
           <div className="brands-section">
             <div className="brands-header">
               <h3>Brendlar</h3>
               <button className="brands-all-btn" onClick={() => setSelectedBrand("Barchasi")}>
-                Barchasi
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
+                Barchasi <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             </div>
-
             <div className="brands-list">
               {BRAND_LOGOS.map((brand, index) => (
-                <div
-                  key={index}
-                  className={`brand-card-wrapper ${selectedBrand.toLowerCase() === brand.name.toLowerCase() ? 'active' : ''}`}
-                  onClick={() => setSelectedBrand(brand.name)}
-                >
-                  <div className="brand-icon-box">
-                    <img src={brand.logo} alt={brand.name} />
-                  </div>
+                <div key={index} className={`brand-card-wrapper ${selectedBrand.toLowerCase() === brand.name.toLowerCase() ? 'active' : ''}`} onClick={() => setSelectedBrand(brand.name)} >
+                  <div className="brand-icon-box"><img src={brand.logo} alt={brand.name} /></div>
                   <span className="brand-name">{brand.name}</span>
                 </div>
               ))}
@@ -341,56 +295,41 @@ function App() {
             <div className="empty-state">Ma'lumotlar yuklanmoqda...</div>
           ) : (bestSellers.length > 0 || newArrivals.length > 0) ? (
             <>
-              {/* === QISM 1: ENG KO'P SOTILGANLAR === */}
+              {/* ENG KO'P SOTILGANLAR */}
               {bestSellers.length > 0 && (
                 <>
                   <div className="section-header">
                     <h3>Eng ko'p sotilganlar</h3>
                     <button className="section-all-btn">
-                      Barchasi
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
+                      Barchasi <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                   </div>
-
-                  {/* Gorizontal yonga suriladigan ro'yxat */}
                   <div className="horizontal-shoes-list">
                     {bestSellers.map((shoe) => {
                       const isInCart = cart.some(item => item.id === shoe.id);
                       return (
                         <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
-                          <ProductImageSlider
-                            images={shoe.images}
-                            name={shoe.name}
-                            onImageClick={() => setDetailsModal(shoe)}
-                          />
-                          {shoe.isDeal && <div className="deal-badge">Chegirma</div>}
+                          <ProductImageSlider images={shoe.images} name={shoe.name} onImageClick={() => setDetailsModal(shoe)} />
+
+                          {/* YANGI: Chegirma foizini ko'rsatish */}
+                          {shoe.isDeal && shoe.discountNum > 0 && <div className="deal-badge">-{shoe.discountNum}%</div>}
+
                           <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                             <div className="brand">{shoe.brand}</div>
                             <div className="name">{shoe.name}</div>
-
-                            {/* === YANGILANDI: Narxlar qatori === */}
                             <div className="price-section">
-                              {shoe.isDeal ? (
+                              {shoe.isDeal && shoe.oldPriceNum > 0 ? (
                                 <>
-                                  {/* Eski narx, formatlangan */}
-                                  <span className="old-price">{parseFloat(shoe.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
-                                  {/* Yangi narx, formatlangan, qizil */}
-                                  <span className="price deal-price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                  <span className="old-price">{shoe.oldPriceNum.toLocaleString('ru-RU')} so'm</span>
+                                  <span className="price deal-price">{shoe.price.toLocaleString('ru-RU')} so'm</span>
                                 </>
                               ) : (
-                                /* Oddiy narx */
-                                <span className="price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                <span className="price">{shoe.price.toLocaleString('ru-RU')} so'm</span>
                               )}
                             </div>
                           </div>
                           <div className="card-actions">
-                            <button
-                              className="add-to-cart-btn"
-                              onClick={(e) => addToCart(shoe, null, e)}
-                              disabled={isInCart}
-                            >
+                            <button className="add-to-cart-btn" onClick={(e) => addToCart(shoe, null, e)} disabled={isInCart} >
                               {isInCart ? '✓ Savatda' : 'Savatga'}
                             </button>
                           </div>
@@ -401,53 +340,41 @@ function App() {
                 </>
               )}
 
-              {/* === QISM 2: YANGI MAHSULOTLAR === */}
+              {/* YANGI MAHSULOTLAR */}
               {newArrivals.length > 0 && (
                 <>
                   <div className="section-header">
                     <h3>Yangi mahsulotlar</h3>
                     <button className="section-all-btn">
-                      Barchasi
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
+                      Barchasi <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                   </div>
-
-                  {/* Pastga qarab ketadigan 2 qatorlik ro'yxat */}
                   <div className="shoes-grid">
                     {newArrivals.map((shoe) => {
                       const isInCart = cart.some(item => item.id === shoe.id);
                       return (
                         <div key={shoe.id} className={`shoe-card ${isInCart ? 'in-cart' : ''}`}>
-                          <ProductImageSlider
-                            images={shoe.images}
-                            name={shoe.name}
-                            onImageClick={() => setDetailsModal(shoe)}
-                          />
-                          {shoe.isDeal && <div className="deal-badge">Chegirma</div>}
+                          <ProductImageSlider images={shoe.images} name={shoe.name} onImageClick={() => setDetailsModal(shoe)} />
+
+                          {/* YANGI: Chegirma foizini ko'rsatish */}
+                          {shoe.isDeal && shoe.discountNum > 0 && <div className="deal-badge">-{shoe.discountNum}%</div>}
+
                           <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                             <div className="brand">{shoe.brand}</div>
                             <div className="name">{shoe.name}</div>
-
-                            {/* === YANGILANDI: Narxlar qatori (Bir xil mantiq) === */}
                             <div className="price-section">
-                              {shoe.isDeal ? (
+                              {shoe.isDeal && shoe.oldPriceNum > 0 ? (
                                 <>
-                                  <span className="old-price">{parseFloat(shoe.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
-                                  <span className="price deal-price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                  <span className="old-price">{shoe.oldPriceNum.toLocaleString('ru-RU')} so'm</span>
+                                  <span className="price deal-price">{shoe.price.toLocaleString('ru-RU')} so'm</span>
                                 </>
                               ) : (
-                                <span className="price">{parseFloat(shoe.price).toLocaleString('ru-RU')} so'm</span>
+                                <span className="price">{shoe.price.toLocaleString('ru-RU')} so'm</span>
                               )}
                             </div>
                           </div>
                           <div className="card-actions">
-                            <button
-                              className="add-to-cart-btn"
-                              onClick={(e) => addToCart(shoe, null, e)}
-                              disabled={isInCart}
-                            >
+                            <button className="add-to-cart-btn" onClick={(e) => addToCart(shoe, null, e)} disabled={isInCart} >
                               {isInCart ? '✓ Savatda' : 'Savatga'}
                             </button>
                           </div>
@@ -486,13 +413,10 @@ function App() {
                   <p className="cart-item-brand">{item.brand}</p>
                   <p className="cart-item-name">{item.name}</p>
                   <p className="cart-item-size">O'lcham: {item.selectedSize}</p>
-                  <p className="cart-item-price">{item.price}</p>
+                  <p className="cart-item-price">{item.price.toLocaleString('ru-RU')} so'm</p>
                 </div>
                 <button className="remove-btn" onClick={() => removeFromCart(index)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
               </div>
             ))}
@@ -510,78 +434,44 @@ function App() {
 
       {/* 3. BUYURTMANI RASMIYLASHTIRISH SAHIFASI */}
       {isCheckoutOpen && (
-        <Checkout
-          cart={cart}
-          total={calculateTotal()}
-          onBack={() => setIsCheckoutOpen(false)}
-          onComplete={() => {
-            setCart([]);
-            setIsCheckoutOpen(false);
-            setIsCartOpen(false);
-          }}
-        />
+        <Checkout cart={cart} total={calculateTotal()} onBack={() => setIsCheckoutOpen(false)} onComplete={() => { setCart([]); setIsCheckoutOpen(false); setIsCartOpen(false); }} />
       )}
 
-      {/* 4. MODAL OYNA (Mahsulot tafsilotlari) */}
+      {/* 4. MODAL OYNA */}
       {detailsModal && (
         <div className="modal-overlay" onClick={() => setDetailsModal(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setDetailsModal(null)}>✕</button>
-
             <div className="modal-slider-container" style={{ margin: '0 auto 24px auto', width: '100%', height: '260px' }}>
-                <ProductImageSlider
-                  images={detailsModal.images}
-                  name={detailsModal.name}
-                  onImageClick={null}
-                />
+                <ProductImageSlider images={detailsModal.images} name={detailsModal.name} onImageClick={null} />
             </div>
-
             <div className="modal-body">
               <h2 className="modal-brand">{detailsModal.brand}</h2>
               <p className="modal-name">{detailsModal.name}</p>
 
-              {/* === YANGILANDI: Modal ichidagi narxlar === */}
               <div className="modal-price-box">
-                {detailsModal.isDeal ? (
+                {detailsModal.isDeal && detailsModal.oldPriceNum > 0 && detailsModal.discountNum > 0 ? (
                   <>
-                    <span className="modal-old-price">{parseFloat(detailsModal.oldPrice || 0).toLocaleString('ru-RU')} so'm</span>
-                    <span className="modal-price deal-price">{parseFloat(detailsModal.price).toLocaleString('ru-RU')} so'm</span>
-                    <span className="modal-discount">{detailsModal.discount} CHEGIRMA</span>
+                    <span className="modal-old-price">{detailsModal.oldPriceNum.toLocaleString('ru-RU')} so'm</span>
+                    <span className="modal-price deal-price">{detailsModal.price.toLocaleString('ru-RU')} so'm</span>
+                    <span className="modal-discount">-{detailsModal.discountNum}% CHEGIRMA</span>
                   </>
                 ) : (
-                  <span className="modal-price">{parseFloat(detailsModal.price).toLocaleString('ru-RU')} so'm</span>
+                  <span className="modal-price">{detailsModal.price.toLocaleString('ru-RU')} so'm</span>
                 )}
               </div>
 
               <div className="modal-divider"></div>
-
               <div className="modal-sizes">
                 <p className="sizes-title">O'lchamni tanlang:</p>
                 <div className="sizes-list">
                   {detailsModal.sizes.map(size => (
-                    <button
-                      key={size}
-                      className={`size-btn ${selectedSize === size ? 'selected' : ''}`}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </button>
+                    <button key={size} className={`size-btn ${selectedSize === size ? 'selected' : ''}`} onClick={() => setSelectedSize(size)} > {size} </button>
                   ))}
                 </div>
               </div>
-
               <p className="modal-description">{detailsModal.description}</p>
-
-              <button
-                className="add-to-cart-btn large"
-                onClick={() => {
-                  if (selectedSize) {
-                    addToCart(detailsModal, selectedSize, null);
-                    setDetailsModal(null);
-                  }
-                }}
-                disabled={!selectedSize || cart.some(item => item.id === detailsModal.id && item.selectedSize === selectedSize)}
-              >
+              <button className="add-to-cart-btn large" onClick={() => { if (selectedSize) { addToCart(detailsModal, selectedSize, null); setDetailsModal(null); } }} disabled={!selectedSize || cart.some(item => item.id === detailsModal.id && item.selectedSize === selectedSize)} >
                 {!selectedSize ? "O'lchamni tanlang" : cart.some(item => item.id === detailsModal.id && item.selectedSize === selectedSize) ? "✓ Savatda bor" : "Savatga qo'shish" }
               </button>
             </div>
@@ -589,7 +479,7 @@ function App() {
         </div>
       )}
 
-      {/* 5. FILTR PASTKI OYNASI (BOTTOM SHEET) */}
+      {/* 5. FILTR PASTKI OYNASI */}
       {activeFilter && (
         <div className="filter-overlay" onClick={() => setActiveFilter(null)}>
           <div className="filter-bottom-sheet" onClick={e => e.stopPropagation()}>
@@ -598,35 +488,14 @@ function App() {
               <button className="sheet-close" onClick={() => setActiveFilter(null)}>✕</button>
             </div>
             <div className="sheet-options">
-              {/* Brend Filtr */}
               {activeFilter === "Brend" && BRANDS.map(brand => (
-                <button
-                  key={brand}
-                  className={`sheet-option-btn ${selectedBrand === brand ? 'selected' : ''}`}
-                  onClick={() => { setSelectedBrand(brand); setActiveFilter(null); }}
-                >
-                  {brand}
-                </button>
+                <button key={brand} className={`sheet-option-btn ${selectedBrand === brand ? 'selected' : ''}`} onClick={() => { setSelectedBrand(brand); setActiveFilter(null); }} > {brand} </button>
               ))}
-              {/* Saralash Filtr */}
               {activeFilter === "Saralash" && SORT_OPTIONS.map(option => (
-                <button
-                  key={option}
-                  className={`sheet-option-btn ${sortOrder === option ? 'selected' : ''}`}
-                  onClick={() => { setSortOrder(option); setActiveFilter(null); }}
-                >
-                  {option}
-                </button>
+                <button key={option} className={`sheet-option-btn ${sortOrder === option ? 'selected' : ''}`} onClick={() => { setSortOrder(option); setActiveFilter(null); }} > {option} </button>
               ))}
-              {/* O'lcham Filtr */}
               {activeFilter === "O'lcham" && SIZES.map(size => (
-                <button
-                  key={size}
-                  className={`sheet-option-btn ${selectedSizeFilter === size ? 'selected' : ''}`}
-                  onClick={() => { setSelectedSizeFilter(size); setActiveFilter(null); }}
-                >
-                  {size}
-                </button>
+                <button key={size} className={`sheet-option-btn ${selectedSizeFilter === size ? 'selected' : ''}`} onClick={() => { setSelectedSizeFilter(size); setActiveFilter(null); }} > {size} </button>
               ))}
             </div>
           </div>
