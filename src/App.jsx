@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import './App.css'
-import Checkout from './Checkout' // YANGI KOMPONENTNI CHAQIRDIK
+import Checkout from './Checkout'
 
 const WebApp = window.Telegram.WebApp;
-const FILTERS = ["Sort by", "Brand", "Size", "Colour"];
-const SORT_OPTIONS = ["Default", "Price: Low to High", "Price: High to Low"];
 
-// Python (FastAPI) server manzili
+// 1. FILTRLAR VA SARALASH O'ZBEK TILIGA O'GIRILDI
+const FILTERS = ["Saralash", "Brend", "O'lcham", "Rang"];
+const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
+
 const API_URL = "https://competent-mastodon-lfshoes-751b6276.koyeb.app";
 
 // === RASM SLAYDERI KOMPONENTI ===
@@ -71,14 +72,13 @@ function App() {
   const [cart, setCart] = useState([]);
   const [detailsModal, setDetailsModal] = useState(null);
 
-  // Oynalarni boshqarish uchun state'lar
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false); // YANGI: Checkout oynasi state'i
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeFilter, setActiveFilter] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState("All");
-  const [sortOrder, setSortOrder] = useState("Default");
+  const [selectedBrand, setSelectedBrand] = useState("Barchasi"); // "All" -> "Barchasi"
+  const [sortOrder, setSortOrder] = useState("Standart");
 
   useEffect(() => {
     fetch(`${API_URL}/api/products`)
@@ -94,7 +94,7 @@ function App() {
   }, []);
 
   const BRANDS = useMemo(() => {
-    return ["All", ...new Set(SHOES.map(shoe => shoe.brand))];
+    return ["Barchasi", ...new Set(SHOES.map(shoe => shoe.brand))];
   }, [SHOES]);
 
   useEffect(() => {
@@ -111,26 +111,27 @@ function App() {
     }
   }, [detailsModal]);
 
+  // 2. SO'M FORMATIGA O'TKAZISH VA HISOBLASH
   const calculateTotal = () => {
     const total = cart.reduce((sum, item) => {
       const priceStr = String(item.price);
-      const numericPrice = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+      // Faqat raqamlarni ajratib olamiz (so'm dagi bo'sh joylar va harflarni olib tashlaydi)
+      const numericPrice = parseFloat(priceStr.replace(/[^\d]/g, ''));
       return isNaN(numericPrice) ? sum : sum + numericPrice;
     }, 0);
-    return total.toFixed(2);
+    // Masalan: 1500000 ni "1 500 000" shakliga keltiradi
+    return total.toLocaleString('ru-RU');
   };
 
-  // 1. TUGMALAR MATNINI BOSHQARISH
   useEffect(() => {
-    // Agar checkout ochiq bo'lsa, Telegram tugmalarini Checkout.jsx o'zi boshqaradi
     if (isCheckoutOpen) return;
 
     if (isCartOpen) {
-      WebApp.MainButton.setText(`CHECKOUT - €${calculateTotal()}`);
+      WebApp.MainButton.setText(`RASMIYLASHTIRISH - ${calculateTotal()} so'm`);
       WebApp.MainButton.show();
       WebApp.BackButton.show();
     } else if (cart.length > 0) {
-      WebApp.MainButton.setText(`VIEW CART (${cart.length})`);
+      WebApp.MainButton.setText(`SAVATNI KO'RISH (${cart.length})`);
       WebApp.MainButton.show();
       WebApp.BackButton.hide();
     } else {
@@ -139,16 +140,14 @@ function App() {
     }
   }, [cart, isCartOpen, isCheckoutOpen]);
 
-  // 2. TUGMALAR BOSILISHINI BOSHQARISH
   useEffect(() => {
-    // Agar checkout ochiq bo'lsa, bosilishlarni ham Checkout.jsx o'zi boshqaradi
     if (isCheckoutOpen) return;
 
     const handleMainButtonClick = () => {
       if (isCartOpen) {
-        setIsCheckoutOpen(true); // Savatdan Checkout oynasiga o'tish
+        setIsCheckoutOpen(true);
       } else if (cart.length > 0) {
-        setIsCartOpen(true); // Asosiy sahifadan Savatga o'tish
+        setIsCartOpen(true);
       }
     };
 
@@ -186,20 +185,20 @@ function App() {
 
   const displayedShoes = useMemo(() => {
     let result = [...SHOES];
-    if (selectedBrand !== "All") {
+    if (selectedBrand !== "Barchasi") {
       result = result.filter(shoe => shoe.brand === selectedBrand);
     }
-    const priceReplace = (price) => parseFloat(String(price).replace(/[^\d.]/g, ''));
-    if (sortOrder === "Price: Low to High") {
+    const priceReplace = (price) => parseFloat(String(price).replace(/[^\d]/g, ''));
+    if (sortOrder === "Arzondan qimmatga") {
       result.sort((a, b) => priceReplace(a.price) - priceReplace(b.price));
-    } else if (sortOrder === "Price: High to Low") {
+    } else if (sortOrder === "Qimmatdan arzonga") {
       result.sort((a, b) => priceReplace(b.price) - priceReplace(a.price));
     }
     return result;
   }, [SHOES, selectedBrand, sortOrder]);
 
   const handleFilterClick = (filterName) => {
-    if (filterName === "Brand" || filterName === "Sort by") {
+    if (filterName === "Brend" || filterName === "Saralash") {
       setActiveFilter(filterName);
     } else {
       if(WebApp.showAlert) WebApp.showAlert("Bu filtr tez orada ishga tushadi!");
@@ -210,21 +209,21 @@ function App() {
   return (
     <div className="app-container">
 
-      {/* 1. ASOSIY SAHIFA (Savat va Checkout yopiq bo'lganda ko'rinadi) */}
+      {/* 1. ASOSIY SAHIFA */}
       {!isCartOpen && !isCheckoutOpen && (
         <>
           <div className="filters-scroll">
             <div className="filters-container">
               {FILTERS.map((filter, index) => {
-                const isActive = (filter === "Brand" && selectedBrand !== "All") ||
-                                 (filter === "Sort by" && sortOrder !== "Default");
+                const isActive = (filter === "Brend" && selectedBrand !== "Barchasi") ||
+                                 (filter === "Saralash" && sortOrder !== "Standart");
                 return (
                   <button
                     key={index}
                     className={`filter-btn ${isActive ? 'active-filter' : ''}`}
                     onClick={() => handleFilterClick(filter)}
                   >
-                    {filter === "Brand" && selectedBrand !== "All" ? selectedBrand : filter}
+                    {filter === "Brend" && selectedBrand !== "Barchasi" ? selectedBrand : filter}
                     <svg className="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -249,12 +248,13 @@ function App() {
                       onImageClick={() => setDetailsModal(shoe)}
                     />
 
-                    {shoe.isDeal && <div className="deal-badge">Deal</div>}
+                    {shoe.isDeal && <div className="deal-badge">Chegirma</div>}
 
                     <div className="card-info" onClick={() => setDetailsModal(shoe)}>
                       <div className="brand">{shoe.brand}</div>
                       <div className="name">{shoe.name}</div>
                       <div className="price-section">
+                        {/* Narxni orqasiga so'm yozuvi qo'shildi (Agar bazaga raqamni o'zini yozgan bo'lsangiz) */}
                         <span className={`price ${shoe.isDeal ? 'deal-price' : ''}`}>{shoe.price}</span>
                       </div>
                     </div>
@@ -265,7 +265,7 @@ function App() {
                         onClick={(e) => addToCart(shoe, null, e)}
                         disabled={isInCart}
                       >
-                        {isInCart ? '✓ Added' : 'Add to Cart'}
+                        {isInCart ? '✓ Savatda' : 'Savatga'}
                       </button>
                     </div>
                   </div>
@@ -278,7 +278,7 @@ function App() {
 
           {cart.length > 0 && (
             <button className="floating-cart-btn" onClick={() => setIsCartOpen(true)}>
-              🛒 View Cart ({cart.length})
+              🛒 Savat ({cart.length})
             </button>
           )}
         </>
@@ -313,22 +313,22 @@ function App() {
           </div>
           <div className="cart-total-box">
             <span>Jami:</span>
-            <span>€{calculateTotal()}</span>
+            <span>{calculateTotal()} so'm</span>
           </div>
 
           <button className="floating-cart-btn confirm-btn" onClick={() => setIsCheckoutOpen(true)}>
-            CHECKOUT - €{calculateTotal()}
+            RASMIYLASHTIRISH - {calculateTotal()} so'm
           </button>
         </div>
       )}
 
-      {/* 3. YANGI: BUYURTMANI RASMIYLASHTIRISH SAHIFASI */}
+      {/* 3. BUYURTMANI RASMIYLASHTIRISH SAHIFASI */}
       {isCheckoutOpen && (
         <Checkout
           cart={cart}
           total={calculateTotal()}
-          onBack={() => setIsCheckoutOpen(false)} // Orqaga qaytish
-          onComplete={() => { // Muvaffaqiyatli tugatilganda
+          onBack={() => setIsCheckoutOpen(false)}
+          onComplete={() => {
             setCart([]);
             setIsCheckoutOpen(false);
             setIsCartOpen(false);
@@ -355,7 +355,7 @@ function App() {
               <p className="modal-name">{detailsModal.name}</p>
               <div className="modal-price-box">
                 <span className="modal-price">{detailsModal.price}</span>
-                {detailsModal.isDeal && <span className="modal-discount">{detailsModal.discount} OFF</span>}
+                {detailsModal.isDeal && <span className="modal-discount">{detailsModal.discount} CHEGIRMA</span>}
               </div>
               <div className="modal-divider"></div>
 
@@ -407,7 +407,7 @@ function App() {
               <button className="sheet-close" onClick={() => setActiveFilter(null)}>✕</button>
             </div>
             <div className="sheet-options">
-              {activeFilter === "Brand" && BRANDS.map(brand => (
+              {activeFilter === "Brend" && BRANDS.map(brand => (
                 <button
                   key={brand}
                   className={`sheet-option-btn ${selectedBrand === brand ? 'selected' : ''}`}
@@ -416,7 +416,7 @@ function App() {
                   {brand}
                 </button>
               ))}
-              {activeFilter === "Sort by" && SORT_OPTIONS.map(option => (
+              {activeFilter === "Saralash" && SORT_OPTIONS.map(option => (
                 <button
                   key={option}
                   className={`sheet-option-btn ${sortOrder === option ? 'selected' : ''}`}
