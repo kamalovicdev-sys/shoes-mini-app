@@ -4,7 +4,7 @@ import Checkout from './Checkout';
 
 const WebApp = window.Telegram.WebApp;
 
-const FILTERS = ["Saralash", "Brend", "O'lcham", "Rang"];
+const FILTERS = ["Saralash", "Brend", "O'lcham"];
 const SORT_OPTIONS = ["Standart", "Arzondan qimmatga", "Qimmatdan arzonga"];
 
 // Brendlar logotiplari ro'yxati
